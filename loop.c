@@ -22,13 +22,26 @@
 #include <errno.h>
 #include <alsa/asoundlib.h>
 
-#define BUFSIZE (1024 * 4)
+#define RATE		48000U
+#define PERIODS		2
+#define PERIOD_TIME_US	20000U
+#define SAMPLE_SZ_BYTES	4U
+#define CHANNELS		4U
+
+#define FRAME_SZ_BYTES		(CHANNELS * SAMPLE_SZ_BYTES)
+#define BUFFER_TIME_US		(PERIODS * PERIOD_TIME_US)
+#define PERIOD_SZ_FRAMES	(RATE * PERIOD_TIME_US / 1000000)
+#define BUFFER_SZ_FRAMES	(RATE * BUFFER_TIME_US / 1000000)
+#define BUFFER_SZ_BYTES		(BUFFER_SZ_FRAMES * FRAME_SZ_BYTES)
+
 
 snd_pcm_t *playback_handle, *capture_handle;
-int buf[BUFSIZE * 2];
+int buf[BUFFER_SZ_BYTES];
 
-static unsigned int rate = 192000;
+static unsigned int rate = RATE;
 static unsigned int format = SND_PCM_FORMAT_S32_LE;
+
+static unsigned int buffer_sz_frames = BUFFER_SZ_FRAMES;
 
 static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 {
@@ -36,6 +49,7 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 	snd_pcm_sw_params_t *sw_params;
 	const char *dirname = (dir == SND_PCM_STREAM_PLAYBACK) ? "PLAYBACK" : "CAPTURE";
 	int err;
+	int dummy;
 
 	if ((err = snd_pcm_open(handle, name, dir, 0)) < 0) {
 		fprintf(stderr, "%s (%s): cannot open audio device (%s)\n", 
@@ -73,9 +87,14 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 		return err;
 	}
 
-	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, 2)) < 0) {
+	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, CHANNELS)) < 0) {
 		fprintf(stderr, "%s (%s): cannot set channel count(%s)\n",
 			name, dirname, snd_strerror(err));
+		return err;
+	}
+
+	if ((err = snd_pcm_hw_params_set_buffer_size_near(*handle, hw_params, &buffer_sz_frames)) < 0) {
+		fprintf(stderr, "set_buffer_time: %s\n",snd_strerror(err));
 		return err;
 	}
 
@@ -97,11 +116,12 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir)
 			name, dirname, snd_strerror(err));
 		return err;
 	}
-	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, BUFSIZE)) < 0) {
+	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, PERIOD_SZ_FRAMES)) < 0) {
 		fprintf(stderr, "%s (%s): cannot set minimum available count(%s)\n",
 			name, dirname, snd_strerror(err));
 		return err;
 	}
+
 	if ((err = snd_pcm_sw_params_set_start_threshold(*handle, sw_params, 0U)) < 0) {
 		fprintf(stderr, "%s (%s): cannot set start mode(%s)\n",
 			name, dirname, snd_strerror(err));
@@ -120,10 +140,10 @@ int main(int argc, char *argv[])
 {
 	int err;
 
-	if ((err = open_stream(&playback_handle, "default", SND_PCM_STREAM_PLAYBACK)) < 0)
+	if ((err = open_stream(&playback_handle, "hw:0,0", SND_PCM_STREAM_PLAYBACK)) < 0)
 		return err;
 
-	if ((err = open_stream(&capture_handle, "hw:0,1", SND_PCM_STREAM_CAPTURE)) < 0)
+	if ((err = open_stream(&capture_handle, "hw:0,0", SND_PCM_STREAM_CAPTURE)) < 0)
 		return err;
 
 	if ((err = snd_pcm_prepare(playback_handle)) < 0) {
@@ -150,16 +170,16 @@ int main(int argc, char *argv[])
 
 		avail = snd_pcm_avail_update(capture_handle);
 		if (avail > 0) {
-			if (avail > BUFSIZE)
-				avail = BUFSIZE;
+			if (avail > BUFFER_SZ_BYTES)
+				avail = BUFFER_SZ_BYTES;
 
 			snd_pcm_readi(capture_handle, buf, avail);
 		}
 
 		avail = snd_pcm_avail_update(playback_handle);
 		if (avail > 0) {
-			if (avail > BUFSIZE)
-				avail = BUFSIZE;
+			if (avail > BUFFER_SZ_BYTES)
+				avail = BUFFER_SZ_BYTES;
 
 			snd_pcm_writei(playback_handle, buf, avail);
 		}
