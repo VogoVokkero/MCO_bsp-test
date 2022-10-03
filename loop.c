@@ -34,6 +34,8 @@
 #define BUFFER_SZ_FRAMES	(RATE * BUFFER_TIME_US / 1000000)
 #define BUFFER_SZ_BYTES		(BUFFER_SZ_FRAMES * FRAME_SZ_BYTES)
 
+//#define ALSA_DEVICE	"hw:0,0"
+#define ALSA_DEVICE "sysdefault:CARD=axcavb"
 
 snd_pcm_t *playback_handle, *capture_handle;
 int buf[BUFFER_SZ_BYTES];
@@ -140,10 +142,12 @@ int main(int argc, char *argv[])
 {
 	int err;
 
-	if ((err = open_stream(&playback_handle, "hw:0,0", SND_PCM_STREAM_PLAYBACK)) < 0)
+	printf("using "ALSA_DEVICE"\n");
+
+	if ((err = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK)) < 0)
 		return err;
 
-	if ((err = open_stream(&capture_handle, "hw:0,0", SND_PCM_STREAM_CAPTURE)) < 0)
+	if ((err = open_stream(&capture_handle, ALSA_DEVICE, SND_PCM_STREAM_CAPTURE)) < 0)
 		return err;
 
 	if ((err = snd_pcm_prepare(playback_handle)) < 0) {
