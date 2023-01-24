@@ -170,10 +170,10 @@ static void *audio_runner(void * p_data)
 				DLT_LOG(dlt_ctxt_audio, verbosity,
 					DLT_STRING("snd_pcm_read"),
 					DLT_UINT32(r),
-					DLT_UINT32(pbuf[0]),
-					DLT_UINT32(pbuf[1]),
-					DLT_UINT32(pbuf[2]),
-					DLT_UINT32(pbuf[3])
+					DLT_HEX32(pbuf[0]),
+					DLT_HEX32(pbuf[1]),
+					DLT_HEX32(pbuf[2]),
+					DLT_HEX32(pbuf[3])
 					);
 			}
 		}

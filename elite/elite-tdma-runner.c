@@ -5,6 +5,7 @@
  * See README
  */
 #include "esg-bsp-test.h"
+#include "elite-slave-ready-gpio.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_tdma);
 
@@ -38,14 +39,17 @@ int elite_tdma_init(pthread_t *runner, uint32_t nb_loops)
 
 	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_INFO, DLT_STRING("elite_tdma_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
-	ret = pthread_create(runner, NULL, elite_tdma_runner, nb_loops);
+	/* Initialize dependencies for this, e.g. the slave-ready GPIO */
+	ret = elite_slave_ready_gpio();
 
-	if (EXIT_SUCCESS != ret)
+	if (EXIT_SUCCESS == ret)
 	{
-		DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: failed to creating running"));
+		ret = pthread_create(runner, NULL, elite_tdma_runner, nb_loops);
+		if (EXIT_SUCCESS != ret)
+		{
+			DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: failed to creating running"));
+		}
 	}
-
-	/**/
 
 	return ret;
 }

@@ -17,6 +17,7 @@ add_executable(esg-bsp-test-audio
     elite/elite-tdma-runner.c
     elite/elite-uart-dsp-runner.c
     elite/elite-spidev.c
+    elite/elite-slave-ready-gpio.c
     )
 
 add_definitions(-flto -g -O2 -fstack-protector-strong)

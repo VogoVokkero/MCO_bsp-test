@@ -1,6 +1,8 @@
 #ifndef ELITE_SPIDEV
 #define ELITE_SPIDEV
 
+#define SPI_STM_SPEED  4000000
+
 typedef struct{
     int fd;                     //! Spi file descriptor
 	const char *device;			//! ex: "/dev/spidev1.1";
