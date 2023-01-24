@@ -127,16 +127,18 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 static void *audio_runner(void * p_data)
 {
 	int ret = EXIT_SUCCESS;
-	unsigned int period_cnt = 0;
-
 	uint32_t nb_loops = (uint32_t)p_data;
+
+	int verbosity = (nb_loops < 100000) ? DLT_LOG_INFO : DLT_LOG_VERBOSE;
+
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("START audio_runner"), DLT_INT32(nb_loops));
 
 	while (0 < nb_loops--)
 	{
 		int avail;
 		snd_pcm_sframes_t r = 0;
 
-		period_cnt++;
+		DLT_LOG(dlt_ctxt_btst, verbosity, DLT_STRING("audio_runner"), DLT_UINT32(nb_loops));
 
 		if ((ret = snd_pcm_wait(playback_handle, 1000)) < 0)
 		{
@@ -159,11 +161,23 @@ static void *audio_runner(void * p_data)
 				r = snd_pcm_readi(capture_handle, buf, avail);
 			}
 
-			if (0 == (period_cnt & 0xF))
+			if (0 == (nb_loops & 0xF))
 			{
 				unsigned long *pbuf = (unsigned long*)(buf);
-				printf("r = %04ld:%08lx-%08lx-%08lx-%08lx\n", r, pbuf[0], pbuf[1], pbuf[2], pbuf[3]);
+
+				DLT_LOG(dlt_ctxt_btst, verbosity,
+					DLT_STRING("snd_pcm_read"),
+					DLT_UINT32(r),
+					DLT_UINT32(pbuf[0]),
+					DLT_UINT32(pbuf[1]),
+					DLT_UINT32(pbuf[2]),
+					DLT_UINT32(pbuf[3])
+					);
 			}
+		}
+		else
+		{
+			DLT_LOG(dlt_ctxt_btst, verbosity, DLT_STRING("avail READ =< 0"));
 		}
 
 		avail = snd_pcm_avail_update(playback_handle);
@@ -180,11 +194,18 @@ static void *audio_runner(void * p_data)
 			{
 				r = snd_pcm_writei(playback_handle, buf, avail);
 			}
+			DLT_LOG(dlt_ctxt_btst, verbosity, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
+		}
+		else
+		{
+			DLT_LOG(dlt_ctxt_btst, verbosity, DLT_STRING("avail WRITE =< 0"));
 		}
 	}
 
 	snd_pcm_close(playback_handle);
 	snd_pcm_close(capture_handle);
+
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("EXIT audio_runner"));
 
 	return (void *)ret;
 }
@@ -194,7 +215,7 @@ int audio_init(pthread_t *runner, uint32_t nb_loops)
 {
 	int ret = EXIT_SUCCESS;
 	
-	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 	if ((ret = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0)
 		return ret;
@@ -229,7 +250,12 @@ int audio_init(pthread_t *runner, uint32_t nb_loops)
 		ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
 	}
 
-	ret = pthread_create(runner, NULL, audio_runner, NULL);
+	ret = pthread_create(runner, NULL, audio_runner, nb_loops);
+
+	if (EXIT_SUCCESS != ret)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("audio_init: failed to creating running"));
+	}
 
    return ret;
 }
