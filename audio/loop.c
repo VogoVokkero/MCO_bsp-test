@@ -16,11 +16,8 @@
 /*
  * See README
  */
+#include "esg-bsp-test.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <alsa/asoundlib.h>
 
 
 snd_pcm_t *playback_handle, *capture_handle;
@@ -43,63 +40,55 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 
 	if ((err = snd_pcm_open(handle, name, dir, mode)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot open audio device (%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot open audio device "));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot allocate hardware parameter structure(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot allocate hardware parameter structure"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_any(*handle, hw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot initialize hardware parameter structure(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot initialize hardware parameter structure"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_set_access(*handle, hw_params, SAMPLE_ACCESS)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set access type(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set access type"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_set_format(*handle, hw_params, format)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set sample format(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set sample format"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_set_rate_near(*handle, hw_params, &rate, NULL)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set sample rate(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set sample rate"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, CHANNELS)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set channel count(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set channel count"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params_set_buffer_size_near(*handle, hw_params, &buffer_sz_frames)) < 0)
 	{
-		fprintf(stderr, "set_buffer_time: %s\n", snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("set_buffer_time"));
 		return err;
 	}
 
 	if ((err = snd_pcm_hw_params(*handle, hw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set parameters(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set parameters"));
 		return err;
 	}
 
@@ -107,40 +96,35 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 
 	if ((err = snd_pcm_sw_params_malloc(&sw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot allocate software parameters structure(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot allocate software parameters structure"));
 		return err;
 	}
 	if ((err = snd_pcm_sw_params_current(*handle, sw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot initialize software parameters structure(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot initialize software parameters structure"));
 		return err;
 	}
 	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, PERIOD_SZ_FRAMES)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set minimum available count(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set minimum available count"));
 		return err;
 	}
 
 	if ((err = snd_pcm_sw_params_set_start_threshold(*handle, sw_params, 0U)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set start mode(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set start mode"));
 		return err;
 	}
 	if ((err = snd_pcm_sw_params(*handle, sw_params)) < 0)
 	{
-		fprintf(stderr, "%s (%s): cannot set software parameters(%s)\n",
-				name, dirname, snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set software parameters"));
 		return err;
 	}
 
 	return 0;
 }
 
-int main(int argc, char *argv[])
+int audio_init(void)
 {
 	int err;
 	unsigned int period_cnt = 0;
@@ -156,22 +140,19 @@ int main(int argc, char *argv[])
 
 	if ((err = snd_pcm_prepare(playback_handle)) < 0)
 	{
-		fprintf(stderr, "cannot prepare audio interface for use(%s)\n",
-				snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
 		return err;
 	}
 
 	if ((err = snd_pcm_prepare(capture_handle)) < 0)
 	{
-		fprintf(stderr, "cannot prepare audio interface for use(%s)\n",
-				snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
 		return err;
 	}
 
 	if ((err = snd_pcm_start(capture_handle)) < 0)
 	{
-		fprintf(stderr, "cannot start audio interface for use(%s)\n",
-				snd_strerror(err));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
 		return err;
 	}
 
@@ -193,7 +174,7 @@ int main(int argc, char *argv[])
 
 		if ((err = snd_pcm_wait(playback_handle, 1000)) < 0)
 		{
-			fprintf(stderr, "poll failed(%s)\n", strerror(errno));
+			DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("poll failed"));
 			break;
 		}
 

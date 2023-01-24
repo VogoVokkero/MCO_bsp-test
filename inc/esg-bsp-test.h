@@ -2,6 +2,11 @@
 #define ESG_BSP_TEST
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <alsa/asoundlib.h>
+
 #define RATE 48000U
 #define PERIODS 2
 #define PERIOD_TIME_US 20000U
@@ -22,5 +27,15 @@
 #define SAMPLE_ACCESS SND_PCM_ACCESS_RW_NONINTERLEAVED
 #endif
 
+#include "dlt-client.h"
+
+#ifdef DLT_CLIENT_MAIN_MODULE
+DLT_DECLARE_CONTEXT(dlt_ctxt_btst);
+#else
+DLT_IMPORT_CONTEXT(dlt_ctxt_btst);
+#endif
+
+
+int audio_init(void);
 
 #endif /*ESG_BSP_TEST*/

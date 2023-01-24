@@ -12,12 +12,13 @@ pkg_check_modules(ALSA REQUIRED alsa)
 include(GNUInstallDirs)
 
 add_executable(esg-bsp-test-audio
+    main.c
     audio/loop.c
     )
 
 add_definitions(-flto -g -O2 -fstack-protector-strong)
 
-target_link_libraries(esg-bsp-test-audio ${CDLT_LIBRARIES} ${ALSA_LIBRARIES})
+target_link_libraries(esg-bsp-test-audio -pthread ${CDLT_LIBRARIES} ${ALSA_LIBRARIES})
 target_include_directories(esg-bsp-test-audio PUBLIC ./inc ${CDLT_INCLUDE_DIRS} ${ALSA_INCLUDE_DIRS})
 target_compile_options(esg-bsp-test-audio PUBLIC ${CDLT_CFLAGS_OTHER} ${ALSA_CFLAGS_OTHER})
 
