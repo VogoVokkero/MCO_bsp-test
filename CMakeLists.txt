@@ -18,7 +18,7 @@ add_executable(esg-bsp-test-audio
 add_definitions(-flto -g -O2 -fstack-protector-strong)
 
 target_link_libraries(esg-bsp-test-audio ${CDLT_LIBRARIES} ${ALSA_LIBRARIES})
-target_include_directories(esg-bsp-test-audio PUBLIC ${CDLT_INCLUDE_DIRS} ${ALSA_INCLUDE_DIRS})
+target_include_directories(esg-bsp-test-audio PUBLIC ./inc ${CDLT_INCLUDE_DIRS} ${ALSA_INCLUDE_DIRS})
 target_compile_options(esg-bsp-test-audio PUBLIC ${CDLT_CFLAGS_OTHER} ${ALSA_CFLAGS_OTHER})
 
 install(TARGETS esg-bsp-test-audio DESTINATION bin)
