@@ -13,7 +13,8 @@ include(GNUInstallDirs)
 
 add_executable(esg-bsp-test-audio
     main.c
-    audio/loop.c
+    audio/audio-runner.c
+    elite/elite-runner.c
     )
 
 add_definitions(-flto -g -O2 -fstack-protector-strong)
