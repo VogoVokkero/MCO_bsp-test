@@ -1,18 +1,14 @@
-This super simple tool does nothing but a loop-through between the default
-capture and default playback device. In contrast to a simple "arecord | aplay",
-this program will start writing samples regardless whether there was any input
-from the capture device yet.
+ESG BSP Test Suite : Audio and SPI
+==================================
 
-This was needed for embedded hardware that isn't able to record unless the
-playback stream is running.
+This application provides low-level stubbing for the BSP interfaces, to assess robustness.
 
-Everything is hard-coded to achieve just that.
+## Audio Loop
 
-On top of that, it might serve as an example to anyone who wants to write
-an ALSA application.
+Based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
-Heavily based on sniplets found at
+## SPI/TDMA Protocol Stub
 
-	http://equalarea.com/paul/alsa-audio.html
-
-Released under the GPLv2.
+Using Elite/SPI protocol, provide an audio frames streaming stub: 
+* the VO8346 must be in audio mode
+* linux is spi-master, this application must listen to the "slave-ready" GPIO, and initiate an spi transfer using spidev when the GPIO is asserted.

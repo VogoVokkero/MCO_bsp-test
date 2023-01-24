@@ -44,13 +44,13 @@
 
 snd_pcm_t *playback_handle, *capture_handle;
 
-int buf[BUFFER_SZ_BYTES];
+uint8_t buf[BUFFER_SZ_BYTES];
 void *ch_bufs[CHANNELS] = {0};
 
 static unsigned int rate = RATE;
 static unsigned int format = SND_PCM_FORMAT_S32_LE;
 
-static unsigned int buffer_sz_frames = BUFFER_SZ_FRAMES;
+static unsigned long int buffer_sz_frames = BUFFER_SZ_FRAMES;
 
 static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 {
@@ -233,8 +233,8 @@ int main(int argc, char *argv[])
 
 			if (0 == (period_cnt & 0xF))
 			{
-				unsigned long *pbuf = (unsigned long)(buf);
-				printf("r = %04d:%08x-%08x-%08x-%08x\n", r, pbuf[0], pbuf[1], pbuf[2], pbuf[3]);
+				unsigned long *pbuf = (unsigned long*)(buf);
+				printf("r = %04ld:%08lx-%08lx-%08lx-%08lx\n", r, pbuf[0], pbuf[1], pbuf[2], pbuf[3]);
 			}
 		}
 
