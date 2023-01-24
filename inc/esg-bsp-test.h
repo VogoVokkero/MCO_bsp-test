@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <pthread.h>
 #include <alsa/asoundlib.h>
 
 #define RATE 48000U
@@ -36,6 +37,6 @@ DLT_IMPORT_CONTEXT(dlt_ctxt_btst);
 #endif
 
 
-int audio_init(void);
+int audio_init(pthread_t *runner, uint32_t nb_loops);
 
 #endif /*ESG_BSP_TEST*/

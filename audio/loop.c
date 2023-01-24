@@ -18,8 +18,6 @@
  */
 #include "esg-bsp-test.h"
 
-
-
 snd_pcm_t *playback_handle, *capture_handle;
 
 uint8_t buf[BUFFER_SZ_BYTES];
@@ -35,144 +33,112 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 	snd_pcm_hw_params_t *hw_params;
 	snd_pcm_sw_params_t *sw_params;
 	const char *dirname = (dir == SND_PCM_STREAM_PLAYBACK) ? "PLAYBACK" : "CAPTURE";
-	int err;
+	int ret;
 	int dummy;
 
-	if ((err = snd_pcm_open(handle, name, dir, mode)) < 0)
+	if ((ret = snd_pcm_open(handle, name, dir, mode)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot open audio device "));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0)
+	if ((ret = snd_pcm_hw_params_malloc(&hw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot allocate hardware parameter structure"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_any(*handle, hw_params)) < 0)
+	if ((ret = snd_pcm_hw_params_any(*handle, hw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot initialize hardware parameter structure"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_set_access(*handle, hw_params, SAMPLE_ACCESS)) < 0)
+	if ((ret = snd_pcm_hw_params_set_access(*handle, hw_params, SAMPLE_ACCESS)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set access type"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_set_format(*handle, hw_params, format)) < 0)
+	if ((ret = snd_pcm_hw_params_set_format(*handle, hw_params, format)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set sample format"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_set_rate_near(*handle, hw_params, &rate, NULL)) < 0)
+	if ((ret = snd_pcm_hw_params_set_rate_near(*handle, hw_params, &rate, NULL)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set sample rate"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_set_channels(*handle, hw_params, CHANNELS)) < 0)
+	if ((ret = snd_pcm_hw_params_set_channels(*handle, hw_params, CHANNELS)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set channel count"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params_set_buffer_size_near(*handle, hw_params, &buffer_sz_frames)) < 0)
+	if ((ret = snd_pcm_hw_params_set_buffer_size_near(*handle, hw_params, &buffer_sz_frames)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("set_buffer_time"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_hw_params(*handle, hw_params)) < 0)
+	if ((ret = snd_pcm_hw_params(*handle, hw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set parameters"));
-		return err;
+		return ret;
 	}
 
 	snd_pcm_hw_params_free(hw_params);
 
-	if ((err = snd_pcm_sw_params_malloc(&sw_params)) < 0)
+	if ((ret = snd_pcm_sw_params_malloc(&sw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot allocate software parameters structure"));
-		return err;
+		return ret;
 	}
-	if ((err = snd_pcm_sw_params_current(*handle, sw_params)) < 0)
+	if ((ret = snd_pcm_sw_params_current(*handle, sw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot initialize software parameters structure"));
-		return err;
+		return ret;
 	}
-	if ((err = snd_pcm_sw_params_set_avail_min(*handle, sw_params, PERIOD_SZ_FRAMES)) < 0)
+	if ((ret = snd_pcm_sw_params_set_avail_min(*handle, sw_params, PERIOD_SZ_FRAMES)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set minimum available count"));
-		return err;
+		return ret;
 	}
 
-	if ((err = snd_pcm_sw_params_set_start_threshold(*handle, sw_params, 0U)) < 0)
+	if ((ret = snd_pcm_sw_params_set_start_threshold(*handle, sw_params, 0U)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set start mode"));
-		return err;
+		return ret;
 	}
-	if ((err = snd_pcm_sw_params(*handle, sw_params)) < 0)
+	if ((ret = snd_pcm_sw_params(*handle, sw_params)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot set software parameters"));
-		return err;
+		return ret;
 	}
 
 	return 0;
 }
 
-int audio_init(void)
+
+
+static void *audio_runner(void * p_data)
 {
-	int err;
+	int ret = EXIT_SUCCESS;
 	unsigned int period_cnt = 0;
 
-	printf("using " ALSA_DEVICE "\n");
-	printf("Using %s access\n", (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved");
+	uint32_t nb_loops = (uint32_t)p_data;
 
-	if ((err = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0)
-		return err;
-
-	if ((err = open_stream(&capture_handle, ALSA_DEVICE, SND_PCM_STREAM_CAPTURE, 0)) < 0)
-		return err;
-
-	if ((err = snd_pcm_prepare(playback_handle)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		return err;
-	}
-
-	if ((err = snd_pcm_prepare(capture_handle)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		return err;
-	}
-
-	if ((err = snd_pcm_start(capture_handle)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
-		return err;
-	}
-
-	/* actual sample buffer */
-	memset(buf, 0, sizeof(buf));
-
-	/* non-interleaved channel buffer offets */
-	for (int c = 0; c < CHANNELS; c++)
-	{
-		ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
-	}
-
-	while (1)
+	while (0 < nb_loops--)
 	{
 		int avail;
 		snd_pcm_sframes_t r = 0;
 
 		period_cnt++;
 
-		if ((err = snd_pcm_wait(playback_handle, 1000)) < 0)
+		if ((ret = snd_pcm_wait(playback_handle, 1000)) < 0)
 		{
 			DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("poll failed"));
 			break;
@@ -219,5 +185,51 @@ int audio_init(void)
 
 	snd_pcm_close(playback_handle);
 	snd_pcm_close(capture_handle);
-	return 0;
+
+	return (void *)ret;
+}
+
+
+int audio_init(pthread_t *runner, uint32_t nb_loops)
+{
+	int ret = EXIT_SUCCESS;
+	
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
+
+	if ((ret = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0)
+		return ret;
+
+	if ((ret = open_stream(&capture_handle, ALSA_DEVICE, SND_PCM_STREAM_CAPTURE, 0)) < 0)
+		return ret;
+
+	if ((ret = snd_pcm_prepare(playback_handle)) < 0)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
+		return ret;
+	}
+
+	if ((ret = snd_pcm_prepare(capture_handle)) < 0)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
+		return ret;
+	}
+
+	if ((ret = snd_pcm_start(capture_handle)) < 0)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
+		return ret;
+	}
+
+	/* actual sample buffer */
+	memset(buf, 0, sizeof(buf));
+
+	/* non-interleaved channel buffer offets */
+	for (int c = 0; c < CHANNELS; c++)
+	{
+		ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
+	}
+
+	ret = pthread_create(runner, NULL, audio_runner, NULL);
+
+   return ret;
 }
