@@ -18,6 +18,8 @@
  */
 #include "esg-bsp-test.h"
 
+DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
+
 snd_pcm_t *playback_handle, *capture_handle;
 
 uint8_t buf[BUFFER_SZ_BYTES];
@@ -214,6 +216,8 @@ static void *audio_runner(void * p_data)
 int audio_init(pthread_t *runner, uint32_t nb_loops)
 {
 	int ret = EXIT_SUCCESS;
+
+	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio,"BTST","ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 	
 	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 

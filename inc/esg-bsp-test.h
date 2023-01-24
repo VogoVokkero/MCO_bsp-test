@@ -30,18 +30,11 @@
 
 #include "dlt-client.h"
 
-#ifdef DLT_CLIENT_MAIN_MODULE
-DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
-DLT_DECLARE_CONTEXT(dlt_ctxt_tdma);
-#else
-DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
-DLT_IMPORT_CONTEXT(dlt_ctxt_tdma);
-#endif
-
 #define DLT_VERBOSITY_LOOP_THRESHOLD 100000U
 
-
 int audio_init(pthread_t *runner, uint32_t nb_loops);
+
 int elite_init(pthread_t *runner, uint32_t nb_loops);
+int elite_uart_dsp_init(pthread_t *runner, uint32_t nb_loops);
 
 #endif /*ESG_BSP_TEST*/

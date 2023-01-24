@@ -6,6 +6,8 @@
  */
 #include "esg-bsp-test.h"
 
+DLT_DECLARE_CONTEXT(dlt_ctxt_tdma);
+
 static void *elite_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
@@ -31,6 +33,8 @@ int elite_init(pthread_t *runner, uint32_t nb_loops)
 {
 	int ret = EXIT_SUCCESS;
 
+	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_tdma,"ELIT","ESG BSP ELITE TDMA Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
+
 	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_INFO, DLT_STRING("elite_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 	ret = pthread_create(runner, NULL, elite_runner, nb_loops);
@@ -39,6 +43,8 @@ int elite_init(pthread_t *runner, uint32_t nb_loops)
 	{
 		DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_init: failed to creating running"));
 	}
+
+	/**/
 
 	return ret;
 }

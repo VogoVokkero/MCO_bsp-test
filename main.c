@@ -8,7 +8,8 @@
 enum
 {
 	RUNNER_AUDIO = 0, // alsa
-	RUNNER_ELITE = 1, // Elite TDMA (spi)
+	RUNNER_ELITE_TDMA = 1, // Elite TDMA (spi)
+	RUNNER_ELITE_UDSP = 1, // Elite TDMA (spi)
 	RUNNER_INVALID = 2
 };
 
@@ -21,9 +22,6 @@ int main(int argc, char **argv)
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio,"BTST","ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_tdma,"ELIT","ESG BSP ELITE TDMA Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-
 	if (2 <= argc)
 	{
 		nb_loops = strtoul (argv[1], NULL, 0);
@@ -34,13 +32,19 @@ int main(int argc, char **argv)
 
 	if (EXIT_SUCCESS == ret)
 	{
-		elite_init(&test_runner[RUNNER_ELITE], nb_loops);
+		elite_init(&test_runner[RUNNER_ELITE_TDMA], nb_loops);
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], nb_loops);
 	}
 
 	if (EXIT_SUCCESS == ret)
 	{
 		pthread_join(test_runner[RUNNER_AUDIO], NULL);
-		pthread_join(test_runner[RUNNER_ELITE], NULL);
+		pthread_join(test_runner[RUNNER_ELITE_TDMA], NULL);
+		pthread_join(test_runner[RUNNER_ELITE_UDSP], NULL);
 	}
 	
 	dlt_client_exit();
