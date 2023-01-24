@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
 	if (EXIT_SUCCESS == ret)
 	{
-		elite_init(&test_runner[RUNNER_ELITE_TDMA], nb_loops);
+		elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], nb_loops);
 	}
 
 	if (EXIT_SUCCESS == ret)

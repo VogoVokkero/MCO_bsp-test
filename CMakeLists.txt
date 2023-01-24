@@ -14,7 +14,7 @@ include(GNUInstallDirs)
 add_executable(esg-bsp-test-audio
     main.c
     audio/audio-runner.c
-    elite/elite-runner.c
+    elite/elite-tdma-runner.c
     elite/elite-uart-dsp-runner.c
     )
 

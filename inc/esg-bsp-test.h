@@ -34,7 +34,7 @@
 
 int audio_init(pthread_t *runner, uint32_t nb_loops);
 
-int elite_init(pthread_t *runner, uint32_t nb_loops);
+int elite_tdma_init(pthread_t *runner, uint32_t nb_loops);
 int elite_uart_dsp_init(pthread_t *runner, uint32_t nb_loops);
 
 #endif /*ESG_BSP_TEST*/
