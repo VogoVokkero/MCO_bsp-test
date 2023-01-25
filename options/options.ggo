@@ -10,8 +10,7 @@ version "1.0"   # don't use version if you're using automake
 #text " before the other options.\n"
 
 option  "loops"          l "Number or cycles for each running.\
-this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n \
-default value will be : blah"      int     optional
+this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n"      int     optional default="1000"
 
 option  "no-audio"       - "disable audio runner"        flag       off
 option  "no-tdma"        - "disable tdma x-fer"        flag       off

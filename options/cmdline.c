@@ -36,7 +36,7 @@ const char *gengetopt_args_info_description = "";
 const char *gengetopt_args_info_help[] = {
   "  -h, --help       Print help and exit",
   "  -V, --version    Print version and exit",
-  "  -l, --loops=INT  Number or cycles for each running.this is roughly the number\n                     of 20ms audio periods to process, or 10ms SPI messages\n                      default value will be : blah",
+  "  -l, --loops=INT  Number or cycles for each running.this is roughly the number\n                     of 20ms audio periods to process, or 10ms SPI messages\n                       (default=`1000')",
   "      --no-audio   disable audio runner  (default=off)",
   "      --no-tdma    disable tdma x-fer  (default=off)",
   "      --no-uart    disable uart x-fer  (default=off)",
@@ -101,6 +101,7 @@ static
 void clear_args (struct gengetopt_args_info *args_info)
 {
   FIX_UNUSED (args_info);
+  args_info->loops_arg = 1000;
   args_info->loops_orig = NULL;
   args_info->no_audio_flag = 0;
   args_info->no_tdma_flag = 0;
@@ -528,12 +529,12 @@ cmdline_parser_internal (
           exit (EXIT_SUCCESS);
 
         case 'l':	/* Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
-         default value will be : blah.  */
+.  */
         
         
           if (update_arg( (void *)&(args_info->loops_arg), 
                &(args_info->loops_orig), &(args_info->loops_given),
-              &(local_args_info.loops_given), optarg, 0, 0, ARG_INT,
+              &(local_args_info.loops_given), optarg, 0, "1000", ARG_INT,
               check_ambiguity, override, 0, 0,
               "loops", 'l',
               additional_error))

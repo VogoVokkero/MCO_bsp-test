@@ -40,11 +40,11 @@ struct gengetopt_args_info
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
   int loops_arg;	/**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
-   default value will be : blah.  */
+ (default='1000').  */
   char * loops_orig;	/**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
-   default value will be : blah original value given at command line.  */
+ original value given at command line.  */
   const char *loops_help; /**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
-   default value will be : blah help description.  */
+ help description.  */
   int no_audio_flag;	/**< @brief disable audio runner (default=off).  */
   const char *no_audio_help; /**< @brief disable audio runner help description.  */
   int no_tdma_flag;	/**< @brief disable tdma x-fer (default=off).  */
