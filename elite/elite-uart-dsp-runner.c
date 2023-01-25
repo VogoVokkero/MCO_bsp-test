@@ -15,7 +15,7 @@ static void *elite_uart_dsp_runner(void *p_data)
 
 	int verbosity = (nb_loops < DLT_VERBOSITY_LOOP_THRESHOLD) ? DLT_LOG_VERBOSE : DLT_LOG_INFO ;
 
-	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("START udsp_runner for #loops:"), DLT_UINT32(nb_loops));
+	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("START"));
 
 	while (0 < nb_loops--)
 	{
@@ -24,7 +24,7 @@ static void *elite_uart_dsp_runner(void *p_data)
 		DLT_LOG(dlt_ctxt_udsp, verbosity, DLT_STRING("udsp_runner"), DLT_UINT32(nb_loops));
 	}
 
-	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("EXIT udsp_runner"));
+	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("EXIT"));
 
 	return (void *)ret;
 }

@@ -16,7 +16,7 @@ static void *elite_tdma_runner(void *p_data)
 
 	int verbosity = (nb_loops < DLT_VERBOSITY_LOOP_THRESHOLD) ? DLT_LOG_VERBOSE : DLT_LOG_INFO ;
 
-	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("START elite_tdma_runner for #loops:"), DLT_UINT32(nb_loops));
+	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("START"));
 
 	while (0 < nb_loops--)
 	{
@@ -26,7 +26,7 @@ static void *elite_tdma_runner(void *p_data)
 
 	}
 
-	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("EXIT elite_tdma_runner"));
+	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("EXIT"));
 
 	return (void *)ret;
 }

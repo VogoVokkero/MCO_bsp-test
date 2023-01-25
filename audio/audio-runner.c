@@ -133,7 +133,7 @@ static void *audio_runner(void * p_data)
 
 	int verbosity = (nb_loops < DLT_VERBOSITY_LOOP_THRESHOLD) ? DLT_LOG_VERBOSE : DLT_LOG_INFO ;
 
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("START audio_runner for #loops:"), DLT_UINT32(nb_loops));
+	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("START"));
 
 	while (0 < nb_loops--)
 	{
@@ -207,7 +207,7 @@ static void *audio_runner(void * p_data)
 	snd_pcm_close(playback_handle);
 	snd_pcm_close(capture_handle);
 
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("EXIT audio_runner"));
+	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("EXIT"));
 
 	return (void *)ret;
 }
