@@ -5,6 +5,8 @@
 #define DLT_CLIENT_MAIN_MODULE
 #include "esg-bsp-test.h"
 
+DLT_DECLARE_CONTEXT(dlt_ctxt_btst)
+
 #include "options/cmdline.h"
 
 enum
@@ -24,14 +26,16 @@ int main(int argc, char **argv)
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
+	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst,"BTST","BSP Test suite", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
+
 	/* let's call our cmdline parser */
 	if (cmdline_parser(argc, argv, &args_info) != 0)
 		exit(1);
 
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("Using loops:"), DLT_UINT32(args_info.loops_arg));
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio enabled:"), DLT_INT32(!args_info.no_audio_flag));
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(!args_info.no_tdma_flag));
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(!args_info.no_uart_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("Using loops:"), DLT_UINT32(args_info.loops_arg));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio enabled:"), DLT_INT32(!args_info.no_audio_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(!args_info.no_tdma_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(!args_info.no_uart_flag));
 
 	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_audio_flag))
 	{
