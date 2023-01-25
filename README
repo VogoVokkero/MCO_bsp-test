@@ -7,8 +7,13 @@ This application provides low-level stubbing for the BSP interfaces, to assess r
 
 Based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
-## Ellite : SPI/TDMA Protocol Stub
+## Elite : SPI/TDMA Protocol Stub
 
 Using Elite/SPI protocol, provide an audio frames streaming stub: 
 * the VO8346 must be in audio mode
 * linux is spi-master, this application must listen to the "slave-ready" GPIO, and initiate an spi transfer using spidev when the GPIO is asserted.
+
+## Improving and Building
+
+* new arguments must be added using the gengetopt pattern, see 'options' folfer
+* build in yocto is done using 'bitbake -c cleansstate esg-bsp-test-audio; bitbake esg-bsp-test-audio', the recipe is in meta-vogo-mco/recipes-bsp

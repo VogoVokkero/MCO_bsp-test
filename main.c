@@ -5,6 +5,8 @@
 #define DLT_CLIENT_MAIN_MODULE
 #include "esg-bsp-test.h"
 
+#include "options/cmdline.h"
+
 enum
 {
 	RUNNER_AUDIO = 0, // alsa
@@ -18,26 +20,29 @@ pthread_t test_runner[RUNNER_INVALID];
 int main(int argc, char **argv)
 {
 	int ret = EXIT_SUCCESS;
-	uint32_t nb_loops = 1000U;
+	struct gengetopt_args_info args_info;
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
-	if (2 <= argc)
+	/* let's call our cmdline parser */
+  	if (cmdline_parser (argc, argv, &args_info) != 0)
+	    exit(1) ;
+
+	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("Using loops="), DLT_UINT32(args_info.loops_arg));
+	
+	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_audio_flag))
 	{
-		nb_loops = strtoul (argv[1], NULL, 0);
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("Using loops="), DLT_UINT32(nb_loops));
+		ret = audio_init(&test_runner[RUNNER_AUDIO], args_info.loops_arg);
 	}
 
-	ret = audio_init(&test_runner[RUNNER_AUDIO], nb_loops);
-
-	if (EXIT_SUCCESS == ret)
+	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_tdma_flag))
 	{
-		elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], nb_loops);
+		ret = elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], args_info.loops_arg);
 	}
 
-	if (EXIT_SUCCESS == ret)
+	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_uart_flag))
 	{
-		elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], nb_loops);
+		ret = elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], args_info.loops_arg);
 	}
 
 	if (EXIT_SUCCESS == ret)

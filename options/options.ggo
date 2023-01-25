@@ -1,0 +1,39 @@
+# Name of your program
+package "esg-bsp-test-audio" # don't use package if you're using automake
+# Version of your program
+version "1.0"   # don't use version if you're using automake
+
+# Options
+#option  "str-opt"         s "A string option, for a filename"
+#        string typestr="filename"     optional
+#text "\nA brief text description"
+#text " before the other options.\n"
+
+option  "loops"          l "Number or cycles for each running.\
+this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n \
+default value will be : blah"      int     optional
+
+option  "no-audio"       - "disable audio runner"        flag       off
+option  "no-tdma"        - "disable tdma x-fer"        flag       off
+option  "no-uart"        - "disable uart x-fer"        flag       off
+
+
+#option  "funct-opt"       F "A function option"    optional 
+#    details="\nA function option is basically an option with no argument.\
+#  It can be used, e.g., to specify a specific behavior for a program.
+
+#Well, this further explanation is quite useless, but it's only to \
+#show an example of an option with details, \
+#which will be printed only when --detailed-help is given \
+#at the command line."
+#section "last option section"
+#option  "long-opt"        - "A long option"        long       optional
+#option  "def-opt"         - "A string option with default" 
+#        string default="Hello" optional
+#option  "enum-opt"         - "A string option with list of values" 
+#        values="foo","bar","hello","bye" default="hello" optional
+#option  "secret"         S "hidden option will not appear in --help" 
+#        int optional hidden
+#option  "dependant"         D 
+#        "option that depends on str-opt" int optional dependon="str-opt"
+text "\nGood luck."
