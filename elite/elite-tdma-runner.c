@@ -9,6 +9,8 @@
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_tdma);
 
+elite_gpio_t slave_ready_gpio = {0};
+
 static void *elite_tdma_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
@@ -22,6 +24,9 @@ static void *elite_tdma_runner(void *p_data)
 	{
 		int avail;
 		DLT_LOG(dlt_ctxt_tdma, verbosity, DLT_STRING("elite_tdma_runner"), DLT_UINT32(nb_loops));
+
+		/*wait for slave-ready GPIO to be asserted */
+
 
 
 	}
@@ -40,7 +45,7 @@ int elite_tdma_init(pthread_t *runner, uint32_t nb_loops)
 	DLT_LOG(dlt_ctxt_tdma, DLT_LOG_INFO, DLT_STRING("elite_tdma_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 	/* Initialize dependencies for this, e.g. the slave-ready GPIO */
-	ret = elite_slave_ready_gpio();
+	ret = elite_slave_ready_gpio(&slave_ready_gpio);
 
 	if (EXIT_SUCCESS == ret)
 	{

@@ -34,12 +34,13 @@ const char *gengetopt_args_info_versiontext = "";
 const char *gengetopt_args_info_description = "";
 
 const char *gengetopt_args_info_help[] = {
-  "  -h, --help       Print help and exit",
-  "  -V, --version    Print version and exit",
-  "  -l, --loops=INT  Number or cycles for each running.this is roughly the number\n                     of 20ms audio periods to process, or 10ms SPI messages\n                       (default=`1000')",
-  "      --no-audio   disable audio runner  (default=off)",
-  "      --no-tdma    disable tdma x-fer  (default=off)",
-  "      --no-uart    disable uart x-fer  (default=off)",
+  "  -h, --help            Print help and exit",
+  "  -V, --version         Print version and exit",
+  "  -l, --loops=INT       Number or cycles for each running.this is roughly the\n                          number of 20ms audio periods to process, or 10ms SPI\n                          messages\n                            (default=`1000')",
+  "      --no-audio        disable audio runner  (default=off)",
+  "      --no-tdma         disable tdma x-fer  (default=off)",
+  "      --no-uart         disable uart x-fer  (default=off)",
+  "      --gpio-test-only  just check select() on gpio47  (default=off)",
   "\nGood luck.",
     0
 };
@@ -95,6 +96,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->no_audio_given = 0 ;
   args_info->no_tdma_given = 0 ;
   args_info->no_uart_given = 0 ;
+  args_info->gpio_test_only_given = 0 ;
 }
 
 static
@@ -106,6 +108,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->no_audio_flag = 0;
   args_info->no_tdma_flag = 0;
   args_info->no_uart_flag = 0;
+  args_info->gpio_test_only_flag = 0;
   
 }
 
@@ -120,6 +123,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->no_audio_help = gengetopt_args_info_help[3] ;
   args_info->no_tdma_help = gengetopt_args_info_help[4] ;
   args_info->no_uart_help = gengetopt_args_info_help[5] ;
+  args_info->gpio_test_only_help = gengetopt_args_info_help[6] ;
   
 }
 
@@ -252,6 +256,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "no-tdma", 0, 0 );
   if (args_info->no_uart_given)
     write_into_file(outfile, "no-uart", 0, 0 );
+  if (args_info->gpio_test_only_given)
+    write_into_file(outfile, "gpio-test-only", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -509,6 +515,7 @@ cmdline_parser_internal (
         { "no-audio",	0, NULL, 0 },
         { "no-tdma",	0, NULL, 0 },
         { "no-uart",	0, NULL, 0 },
+        { "gpio-test-only",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -575,6 +582,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->no_uart_flag), 0, &(args_info->no_uart_given),
                 &(local_args_info.no_uart_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "no-uart", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* just check select() on gpio47.  */
+          else if (strcmp (long_options[option_index].name, "gpio-test-only") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->gpio_test_only_flag), 0, &(args_info->gpio_test_only_given),
+                &(local_args_info.gpio_test_only_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "gpio-test-only", '-',
                 additional_error))
               goto failure;
           

@@ -8,6 +8,7 @@ add_definitions(-DENABLE_DLT=${ENABLE_DLT})
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(CDLT REQUIRED dlt-client)
 pkg_check_modules(ALSA REQUIRED alsa)
+pkg_check_modules(GPIOD REQUIRED libgpiod)
 
 include(GNUInstallDirs)
 
@@ -23,8 +24,19 @@ add_executable(esg-bsp-test-audio
 
 add_definitions(-flto -g -O2 -fstack-protector-strong)
 
-target_link_libraries(esg-bsp-test-audio -pthread ${CDLT_LIBRARIES} ${ALSA_LIBRARIES})
-target_include_directories(esg-bsp-test-audio PUBLIC ./inc ${CDLT_INCLUDE_DIRS} ${ALSA_INCLUDE_DIRS})
-target_compile_options(esg-bsp-test-audio PUBLIC ${CDLT_CFLAGS_OTHER} ${ALSA_CFLAGS_OTHER})
+target_link_libraries(esg-bsp-test-audio -pthread
+    ${CDLT_LIBRARIES}
+    ${GPIOD_LIBRARIES}
+    ${ALSA_LIBRARIES})
+
+target_include_directories(esg-bsp-test-audio PUBLIC ./inc
+    ${CDLT_INCLUDE_DIRS}
+    ${GPIOD_INCLUDE_DIRS}
+    ${ALSA_INCLUDE_DIRS})
+
+target_compile_options(esg-bsp-test-audio PUBLIC
+    ${CDLT_CFLAGS_OTHER}
+    ${GPIOD_CFLAGS_OTHER}
+    ${ALSA_CFLAGS_OTHER})
 
 install(TARGETS esg-bsp-test-audio DESTINATION bin)

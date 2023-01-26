@@ -51,6 +51,8 @@ struct gengetopt_args_info
   const char *no_tdma_help; /**< @brief disable tdma x-fer help description.  */
   int no_uart_flag;	/**< @brief disable uart x-fer (default=off).  */
   const char *no_uart_help; /**< @brief disable uart x-fer help description.  */
+  int gpio_test_only_flag;	/**< @brief just check select() on gpio47 (default=off).  */
+  const char *gpio_test_only_help; /**< @brief just check select() on gpio47 help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -58,6 +60,7 @@ struct gengetopt_args_info
   unsigned int no_audio_given ;	/**< @brief Whether no-audio was given.  */
   unsigned int no_tdma_given ;	/**< @brief Whether no-tdma was given.  */
   unsigned int no_uart_given ;	/**< @brief Whether no-uart was given.  */
+  unsigned int gpio_test_only_given ;	/**< @brief Whether gpio-test-only was given.  */
 
 } ;
 

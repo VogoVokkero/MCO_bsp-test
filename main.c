@@ -4,6 +4,7 @@
 
 #define DLT_CLIENT_MAIN_MODULE
 #include "esg-bsp-test.h"
+#include "elite/elite-slave-ready-gpio.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_btst)
 
@@ -17,7 +18,7 @@ enum
 	RUNNER_INVALID = 2
 };
 
-pthread_t test_runner[RUNNER_INVALID] = { 0 };
+pthread_t test_runner[RUNNER_INVALID] = {0};
 
 int main(int argc, char **argv)
 {
@@ -26,7 +27,7 @@ int main(int argc, char **argv)
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst,"BTST","BSP Test suite", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
+	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst, "BTST", "BSP Test suite", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
 	/* let's call our cmdline parser */
 	if (cmdline_parser(argc, argv, &args_info) != 0)
@@ -36,6 +37,19 @@ int main(int argc, char **argv)
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio enabled:"), DLT_INT32(!args_info.no_audio_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(!args_info.no_tdma_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(!args_info.no_uart_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("gpio poll test only:"), DLT_INT32(args_info.gpio_test_only_flag));
+
+	if ((EXIT_SUCCESS == ret) && (1 == args_info.gpio_test_only_flag))
+	{
+		elite_gpio_t blah = { 0 };
+
+		elite_slave_ready_gpio(&blah);
+
+		while (1)
+		{
+			elite_slave_ready_wait(&blah);
+		}
+	}
 
 	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_audio_flag))
 	{
