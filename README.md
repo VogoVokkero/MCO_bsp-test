@@ -16,6 +16,11 @@ Using Elite/SPI protocol, provide an audio frames streaming stub:
 The slave-ready GPIO is gpiochip1, gpio15.
 The best is to use the libgpiod library, much more reliable than the older gpiolib interface.
 
+manual dump of the slave-reay config:
+```
+/sys/class/gpio/gpio47# cat active_low consumers direction edge value
+```
+
 ## Improving and Building
 
 * new arguments must be added using the gengetopt pattern, see 'options' folfer
