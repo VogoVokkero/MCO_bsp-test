@@ -124,142 +124,170 @@ static int open_stream(snd_pcm_t **handle, const char *name, int dir, int mode)
 	return 0;
 }
 
-
-
-static void *audio_runner(void * p_data)
+static void *audio_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
-	uint32_t nb_loops = (uint32_t)p_data;
+	ebt_settings_t *settings = (ebt_settings_t *)p_data;
 
-	int verbosity = (nb_loops < DLT_VERBOSITY_LOOP_THRESHOLD) ? DLT_LOG_VERBOSE : DLT_LOG_INFO ;
-
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("START"));
-
-	while (0 < nb_loops--)
+	if (NULL == settings)
 	{
-		int avail;
-		snd_pcm_sframes_t r = 0;
-
-		DLT_LOG(dlt_ctxt_audio, verbosity, DLT_STRING("audio_runner"), DLT_UINT32(nb_loops));
-
-		if ((ret = snd_pcm_wait(playback_handle, 1000)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("poll failed"));
-			break;
-		}
-
-		avail = snd_pcm_avail_update(capture_handle);
-		if (avail > 0)
-		{
-			if (avail > BUFFER_SZ_BYTES)
-				avail = BUFFER_SZ_BYTES;
-
-			if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
-			{
-				r = snd_pcm_readn(capture_handle, ch_bufs, avail);
-			}
-			else
-			{
-				r = snd_pcm_readi(capture_handle, buf, avail);
-			}
-
-			if (0 == (nb_loops & 0xF))
-			{
-				unsigned long *pbuf = (unsigned long*)(buf);
-
-				DLT_LOG(dlt_ctxt_audio, verbosity,
-					DLT_STRING("snd_pcm_read"),
-					DLT_UINT32(r),
-					DLT_HEX32(pbuf[0]),
-					DLT_HEX32(pbuf[1]),
-					DLT_HEX32(pbuf[2]),
-					DLT_HEX32(pbuf[3])
-					);
-			}
-		}
-		else
-		{
-			DLT_LOG(dlt_ctxt_audio, verbosity, DLT_STRING("avail READ =< 0"));
-		}
-
-		avail = snd_pcm_avail_update(playback_handle);
-		if (avail > 0)
-		{
-			if (avail > BUFFER_SZ_BYTES)
-				avail = BUFFER_SZ_BYTES;
-
-			if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
-			{
-				r = snd_pcm_writen(playback_handle, ch_bufs, avail);
-			}
-			else
-			{
-				r = snd_pcm_writei(playback_handle, buf, avail);
-			}
-			DLT_LOG(dlt_ctxt_audio, verbosity, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
-		}
-		else
-		{
-			DLT_LOG(dlt_ctxt_audio, verbosity, DLT_STRING("avail WRITE =< 0"));
-		}
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("START failed, ebt_settings_t null"));
+		ret = -EINVAL;
 	}
 
-	snd_pcm_close(playback_handle);
-	snd_pcm_close(capture_handle);
+	if (EXIT_SUCCESS == ret)
+	{
+		uint32_t nb_loops = settings->nb_loops;
 
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("EXIT"));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
+
+		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
+		{
+			int avail;
+			snd_pcm_sframes_t r = 0;
+
+			if ((ret = snd_pcm_wait(playback_handle, 1000)) < 0)
+			{
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("poll failed"));
+				break;
+			}
+
+			avail = snd_pcm_avail_update(capture_handle);
+			if (avail > 0)
+			{
+				if (avail > BUFFER_SZ_BYTES)
+					avail = BUFFER_SZ_BYTES;
+
+				if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
+				{
+					r = snd_pcm_readn(capture_handle, ch_bufs, avail);
+				}
+				else
+				{
+					r = snd_pcm_readi(capture_handle, buf, avail);
+				}
+
+				if (0 == (nb_loops & 0xF))
+				{
+					unsigned long *pbuf = (unsigned long *)(buf);
+
+					DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG,
+							DLT_STRING("snd_pcm_read"),
+							DLT_UINT32(r),
+							DLT_HEX32(pbuf[0]),
+							DLT_HEX32(pbuf[1]),
+							DLT_HEX32(pbuf[2]),
+							DLT_HEX32(pbuf[3]));
+				}
+			}
+			else
+			{
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail READ =< 0"));
+			}
+
+			avail = snd_pcm_avail_update(playback_handle);
+			if (avail > 0)
+			{
+				if (avail > BUFFER_SZ_BYTES)
+					avail = BUFFER_SZ_BYTES;
+
+				if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
+				{
+					r = snd_pcm_writen(playback_handle, ch_bufs, avail);
+				}
+				else
+				{
+					r = snd_pcm_writei(playback_handle, buf, avail);
+				}
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
+			}
+			else
+			{
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail WRITE =< 0"));
+			}
+		}
+
+		snd_pcm_close(playback_handle);
+		snd_pcm_close(capture_handle);
+	}
+
+	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("EXIT"), DLT_UINT32(ret));
 
 	return (void *)ret;
 }
 
-
-int audio_init(pthread_t *runner, uint32_t nb_loops)
+int audio_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio,"AUDI","ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-	
-	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
+	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio, "AUDI", "ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	if ((ret = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0)
-		return ret;
-
-	if ((ret = open_stream(&capture_handle, ALSA_DEVICE, SND_PCM_STREAM_CAPTURE, 0)) < 0)
-		return ret;
-
-	if ((ret = snd_pcm_prepare(playback_handle)) < 0)
+	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		return ret;
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
+		ret = -EINVAL;
 	}
 
-	if ((ret = snd_pcm_prepare(capture_handle)) < 0)
+	if (EXIT_SUCCESS == ret)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		return ret;
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
+
+		if ((ret = ret = open_stream(&playback_handle, ALSA_DEVICE, SND_PCM_STREAM_PLAYBACK, SND_PCM_NONBLOCK)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_PLAYBACK"));
+		}
 	}
 
-	if ((ret = snd_pcm_start(capture_handle)) < 0)
+	if (EXIT_SUCCESS == ret)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
-		return ret;
+		if ((ret = open_stream(&capture_handle, ALSA_DEVICE, SND_PCM_STREAM_CAPTURE, 0)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_CAPTURE"));
+		}
 	}
 
-	/* actual sample buffer */
-	memset(buf, 0, sizeof(buf));
-
-	/* non-interleaved channel buffer offets */
-	for (int c = 0; c < CHANNELS; c++)
+	if (EXIT_SUCCESS == ret)
 	{
-		ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
+		if ((ret = snd_pcm_prepare(playback_handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
+		}
 	}
 
-	ret = pthread_create(runner, NULL, audio_runner, nb_loops);
+	if (EXIT_SUCCESS == ret)
+	{
+		if ((ret = snd_pcm_prepare(capture_handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
+		}
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		if ((ret = snd_pcm_start(capture_handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
+		}
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		/* actual sample buffer */
+		memset(buf, 0, sizeof(buf));
+
+		/* non-interleaved channel buffer offets */
+		for (int c = 0; c < CHANNELS; c++)
+		{
+			ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
+		}
+
+		ret = pthread_create(runner, NULL, audio_runner, (void *)settings);
+	}
 
 	if (EXIT_SUCCESS != ret)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init: failed to creating running"));
 	}
 
-   return ret;
+	return ret;
 }

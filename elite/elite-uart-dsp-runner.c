@@ -16,14 +16,19 @@ int uart_fd;
 static void *elite_uart_dsp_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
-	uint32_t nb_loops = (uint32_t)p_data;
+	ebt_settings_t *settings = (ebt_settings_t *)p_data;
 	char line_buffer[4096];
-
-	int verbosity = (nb_loops < DLT_VERBOSITY_LOOP_THRESHOLD) ? DLT_LOG_VERBOSE : DLT_LOG_INFO;
 
 	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("START"));
 
-	while (0 < nb_loops--)
+	if (NULL == settings)
+	{
+		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_runner: invalid settings"));
+		ret = -EINVAL;
+	}
+
+	/* not counting loops, but kill by parent */
+	while (EXIT_SUCCESS == ret)
 	{
 		char c;
 		uint16_t cur_pos = 0;
@@ -37,28 +42,37 @@ static void *elite_uart_dsp_runner(void *p_data)
 			}
 		}
 
-		DLT_LOG(dlt_ctxt_udsp, verbosity, DLT_STRING("udsp_runner"), DLT_STRING(line_buffer));
+		DLT_LOG(dlt_ctxt_udsp, settings->verbosity, DLT_STRING("udsp_runner got :"), DLT_STRING(line_buffer));
 	}
 
-	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("EXIT"));
+	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("EXIT"), DLT_UINT32(ret));
 
 	return (void *)ret;
 }
 
-int elite_uart_dsp_init(pthread_t *runner, uint32_t nb_loops)
+int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 	struct termios tty;
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_udsp, "UDSP", "ESG BSP ELITE UART DSP Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	DLT_LOG(dlt_ctxt_udsp, DLT_LOG_INFO, DLT_STRING("udsp_init"));
-
-	uart_fd = open(UART_STM, O_RDWR | O_NOCTTY | O_SYNC | O_NONBLOCK);
-	if (uart_fd < 0)
+	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("udsp_init: open failed " UART_STM));
-		ret = uart_fd;
+		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
+		ret = -EINVAL;
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_INFO, DLT_STRING("udsp_init"));
+
+		uart_fd = open(UART_STM, O_RDWR | O_NOCTTY | O_SYNC | O_NONBLOCK);
+		if (uart_fd < 0)
+		{
+			DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("udsp_init: open failed " UART_STM));
+			ret = uart_fd;
+		}
 	}
 
 	if (EXIT_SUCCESS == ret)
@@ -107,7 +121,7 @@ int elite_uart_dsp_init(pthread_t *runner, uint32_t nb_loops)
 			// printf("flushing...\n");
 		}
 
-		ret = pthread_create(runner, NULL, elite_uart_dsp_runner, nb_loops);
+		ret = pthread_create(runner, NULL, elite_uart_dsp_runner, (void *)settings);
 
 		if (EXIT_SUCCESS != ret)
 		{
