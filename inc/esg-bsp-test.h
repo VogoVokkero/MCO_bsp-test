@@ -43,4 +43,6 @@ int audio_init(pthread_t *runner, ebt_settings_t *settings);
 int elite_tdma_init(pthread_t *runner, ebt_settings_t *settings);
 int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings);
 
+DLT_IMPORT_CONTEXT(dlt_ctxt_btst);
+
 #endif /*ESG_BSP_TEST*/

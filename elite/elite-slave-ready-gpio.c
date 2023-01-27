@@ -12,9 +12,7 @@
 #include <unistd.h>   //4 close/open
 #include <string.h>   //4 strlen & memcpy
 #include <sys/time.h> //4 time
-
 #include "elite-slave-ready-gpio.h"
-#include "dlt-client.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_gpioe);
 
@@ -168,14 +166,14 @@ static int elite_gpio_configure_event(elite_gpio_t *sready_gpio)
     return 0;
 }
 
-int elite_slave_ready_gpio(elite_gpio_t *sready_gpio)
+int elite_slave_ready_gpio_init(elite_gpio_t *sready_gpio, ebt_settings_t *settings)
 {
     int ret = -EINVAL;
 
-    DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_gpioe, "GPIO", "ESG BSP ELITE TDMA Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-
-    if (NULL != sready_gpio)
+    if ((NULL != settings) && (NULL != sready_gpio))
     {
+        DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_gpioe, "GPIO", "ESG BSP ELITE TDMA Context", settings->verbosity, DLT_TRACE_STATUS_DEFAULT);
+
         sready_gpio->id = (32 + 15);
 
         ret = elite_gpio_open(sready_gpio);
@@ -194,7 +192,7 @@ int elite_slave_ready_gpio(elite_gpio_t *sready_gpio)
 
     if (0 > ret)
     {
-        DLT_LOG(dlt_ctxt_gpioe, DLT_LOG_ERROR, DLT_STRING("GPIO 'spi slave ready' init failed"));
+        DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("GPIO 'spi slave ready' init failed"));
     }
 }
 

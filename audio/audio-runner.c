@@ -146,7 +146,7 @@ static void *audio_runner(void *p_data)
 			int avail;
 			snd_pcm_sframes_t r = 0;
 
-			if ((ret = snd_pcm_wait(playback_handle, 1000)) < 0)
+			if (snd_pcm_wait(playback_handle, 1000) < 0)
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("poll failed"));
 				break;
@@ -167,22 +167,24 @@ static void *audio_runner(void *p_data)
 					r = snd_pcm_readi(capture_handle, buf, avail);
 				}
 
-				if (0 == (nb_loops & 0xF))
+				if (0 == (nb_loops & 0x1F))
 				{
 					unsigned long *pbuf = (unsigned long *)(buf);
 
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG,
+					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
 							DLT_STRING("snd_pcm_read"),
 							DLT_UINT32(r),
 							DLT_HEX32(pbuf[0]),
 							DLT_HEX32(pbuf[1]),
 							DLT_HEX32(pbuf[2]),
-							DLT_HEX32(pbuf[3]));
+							DLT_HEX32(pbuf[3]),
+							DLT_UINT32(nb_loops));
 				}
 			}
 			else
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail READ =< 0"));
+			//	ret = -EAGAIN;
 			}
 
 			avail = snd_pcm_avail_update(playback_handle);
@@ -204,6 +206,7 @@ static void *audio_runner(void *p_data)
 			else
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail WRITE =< 0"));
+			//	ret = -EAGAIN;
 			}
 		}
 

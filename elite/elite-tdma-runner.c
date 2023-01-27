@@ -46,20 +46,20 @@ int elite_tdma_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_tdma, "ELIT", "ESG BSP ELITE TDMA Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-
 	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: invalide settings"));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: invalid settings"));
 		ret = -EINVAL;
 	}
 
 	if (EXIT_SUCCESS == ret)
 	{
+		DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_tdma, "ELIT", "ESG BSP ELITE TDMA Context", settings->verbosity, DLT_TRACE_STATUS_DEFAULT);
+
 		DLT_LOG(dlt_ctxt_tdma, DLT_LOG_INFO, DLT_STRING("elite_tdma_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 		/* Initialize dependencies for this, e.g. the slave-ready GPIO */
-		ret = elite_slave_ready_gpio(&slave_ready_gpio);
+		ret = elite_slave_ready_gpio_init(&slave_ready_gpio, settings);
 	}
 
 	if (EXIT_SUCCESS == ret)

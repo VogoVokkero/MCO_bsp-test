@@ -55,16 +55,16 @@ int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings)
 	int ret = EXIT_SUCCESS;
 	struct termios tty;
 
-	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_udsp, "UDSP", "ESG BSP ELITE UART DSP Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
-
 	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
 		ret = -EINVAL;
 	}
 
 	if (EXIT_SUCCESS == ret)
 	{
+		DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst, "UDSP", "ESG BSP ELITE UART DSP Context", settings->verbosity, DLT_TRACE_STATUS_DEFAULT);
+
 		DLT_LOG(dlt_ctxt_udsp, DLT_LOG_INFO, DLT_STRING("udsp_init"));
 
 		uart_fd = open(UART_STM, O_RDWR | O_NOCTTY | O_SYNC | O_NONBLOCK);

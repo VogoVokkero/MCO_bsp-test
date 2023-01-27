@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	{
 		elite_gpio_t blah = { 0 };
 
-		elite_slave_ready_gpio(&blah);
+		elite_slave_ready_gpio_init(&blah, &g_settings);
 
 		while (1)
 		{

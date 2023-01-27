@@ -9,10 +9,13 @@
  */
 #ifndef ELITE_SLAVE_READY_GPIO
 #define ELITE_SLAVE_READY_GPIO
+#pragma once
 
 #include <stdint.h>
 #include "errno.h"
 #include <gpiod.h>
+
+#include "esg-bsp-test.h"
 
 #define SPIDEV  "/dev/spidev3.0"
 #define GPIO_PORT_SPI_STM_READY 2
@@ -26,9 +29,10 @@ typedef struct{
 } elite_gpio_t;
 
 
+int elite_slave_ready_gpio_init(elite_gpio_t *sready_gpio, ebt_settings_t *settings);
+
 int elite_gpio_close(elite_gpio_t *sready_gpio);
 int8_t elite_gpio_get(elite_gpio_t *sready_gpio);
-int elite_slave_ready_gpio(elite_gpio_t *sready_gpio);
 int elite_slave_ready_wait(elite_gpio_t *sready_gpio);
 
 #endif //ELITE_SLAVE_READY_GPIO
