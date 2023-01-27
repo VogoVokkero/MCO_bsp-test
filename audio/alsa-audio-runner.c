@@ -17,6 +17,7 @@
  * See README
  */
 #include "esg-bsp-test.h"
+#include "alsa-audio-runner.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
 
@@ -161,30 +162,45 @@ static void *audio_runner(void *p_data)
 				if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
 				{
 					r = snd_pcm_readn(capture_handle, ch_bufs, avail);
+
+					if (0 == (nb_loops & 0x1F))
+					{
+						unsigned long *pbuf = (unsigned long *)(buf);
+
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
+								DLT_STRING("snd_pcm_readn"),
+								DLT_UINT32(r),
+								DLT_HEX32(pbuf[0]),
+								DLT_HEX32(pbuf[1*PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[2*PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[3*PERIOD_SZ_FRAMES]),
+								DLT_UINT32(nb_loops));
+					}
+
 				}
 				else
 				{
 					r = snd_pcm_readi(capture_handle, buf, avail);
-				}
 
-				if (0 == (nb_loops & 0x1F))
-				{
-					unsigned long *pbuf = (unsigned long *)(buf);
+					if (0 == (nb_loops & 0x1F))
+					{
+						unsigned long *pbuf = (unsigned long *)(buf);
 
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-							DLT_STRING("snd_pcm_read"),
-							DLT_UINT32(r),
-							DLT_HEX32(pbuf[0]),
-							DLT_HEX32(pbuf[1]),
-							DLT_HEX32(pbuf[2]),
-							DLT_HEX32(pbuf[3]),
-							DLT_UINT32(nb_loops));
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
+								DLT_STRING("snd_pcm_readi"),
+								DLT_UINT32(r),
+								DLT_HEX32(pbuf[0]),
+								DLT_HEX32(pbuf[1]),
+								DLT_HEX32(pbuf[2]),
+								DLT_HEX32(pbuf[3]),
+								DLT_UINT32(nb_loops));
+					}
 				}
 			}
 			else
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail READ =< 0"));
-			//	ret = -EAGAIN;
+				//	ret = -EAGAIN;
 			}
 
 			avail = snd_pcm_avail_update(playback_handle);
@@ -206,7 +222,7 @@ static void *audio_runner(void *p_data)
 			else
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("x-run : avail WRITE =< 0"));
-			//	ret = -EAGAIN;
+				//	ret = -EAGAIN;
 			}
 		}
 
