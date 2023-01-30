@@ -211,6 +211,22 @@ static void *audio_runner(void *p_data)
 
 				if (SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
 				{
+					unsigned long *pbuf = (unsigned long *)(buf);
+
+					/* constant value, to quickly visualize output channel swap */
+					memset(&(pbuf[2*PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t)*PERIOD_SZ_FRAMES);
+
+					if (0 == (nb_loops & 0x1F))
+					{
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
+								DLT_STRING("snd_pcm_writen"),
+								DLT_UINT32(r),
+								DLT_HEX32(pbuf[0]),
+								DLT_HEX32(pbuf[1*PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[2*PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[3*PERIOD_SZ_FRAMES]),
+								DLT_UINT32(nb_loops));
+					}
 					r = snd_pcm_writen(playback_handle, ch_bufs, avail);
 				}
 				else
