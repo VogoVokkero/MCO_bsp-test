@@ -53,6 +53,8 @@ struct gengetopt_args_info
   const char *uart_help; /**< @brief enable uart x-fer help description.  */
   int gpio_test_only_flag;	/**< @brief just check select() on gpio47 (default=off).  */
   const char *gpio_test_only_help; /**< @brief just check select() on gpio47 help description.  */
+  int verbose_flag;	/**< @brief force VERBOSE mode (default=off).  */
+  const char *verbose_help; /**< @brief force VERBOSE mode help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
@@ -61,6 +63,7 @@ struct gengetopt_args_info
   unsigned int tdma_given ;	/**< @brief Whether tdma was given.  */
   unsigned int uart_given ;	/**< @brief Whether uart was given.  */
   unsigned int gpio_test_only_given ;	/**< @brief Whether gpio-test-only was given.  */
+  unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
 
 } ;
 

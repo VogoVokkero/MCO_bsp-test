@@ -16,6 +16,7 @@ option  "audio"       - "enable audio runner"        flag       on
 option  "tdma"        - "enable tdma x-fer"        flag       off
 option  "uart"        - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
+option  "verbose" - "force VERBOSE mode"        flag       off
 
 #option  "funct-opt"       F "A function option"    optional 
 #    details="\nA function option is basically an option with no argument.\

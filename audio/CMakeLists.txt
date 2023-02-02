@@ -21,7 +21,7 @@ target_link_libraries(alsa-poll-example -pthread -lm
     ${GPIOD_LIBRARIES}
     ${ALSA_LIBRARIES})
 
-target_include_directories(alsa-poll-example PUBLIC ./inc
+target_include_directories(alsa-poll-example PUBLIC ../inc . 
     ${CDLT_INCLUDE_DIRS}
     ${GPIOD_INCLUDE_DIRS}
     ${ALSA_INCLUDE_DIRS})

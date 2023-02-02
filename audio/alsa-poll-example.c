@@ -11,10 +11,12 @@
 #include "../include/asoundlib.h"
 #include <sys/time.h>
 #include <math.h>
+
+#include "esg-bsp-test.h"
  
 static char *device = "plughw:0,0";         /* playback device */
 static snd_pcm_format_t format = SND_PCM_FORMAT_S16;    /* sample format */
-static unsigned int rate = 44100;           /* stream rate */
+static unsigned int rate = AUDIO_TEST_RATE;           /* stream rate */
 static unsigned int channels = 1;           /* count of channels */
 static unsigned int buffer_time = 500000;       /* ring buffer length in us */
 static unsigned int period_time = 100000;       /* period time in us */
@@ -719,8 +721,8 @@ struct transfer_method {
 };
  
 static struct transfer_method transfer_methods[] = {
-    { "write", SND_PCM_ACCESS_RW_INTERLEAVED, write_loop },
     { "write_and_poll", SND_PCM_ACCESS_RW_INTERLEAVED, write_and_poll_loop },
+    { "write", SND_PCM_ACCESS_RW_INTERLEAVED, write_loop },
     { "async", SND_PCM_ACCESS_RW_INTERLEAVED, async_loop },
     { "async_direct", SND_PCM_ACCESS_MMAP_INTERLEAVED, async_direct_loop },
     { "direct_interleaved", SND_PCM_ACCESS_MMAP_INTERLEAVED, direct_loop },

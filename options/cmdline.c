@@ -41,6 +41,7 @@ const char *gengetopt_args_info_help[] = {
   "      --tdma            enable tdma x-fer  (default=off)",
   "      --uart            enable uart x-fer  (default=off)",
   "      --gpio-test-only  just check select() on gpio47  (default=off)",
+  "      --verbose         force VERBOSE mode  (default=off)",
   "\nGood luck.",
     0
 };
@@ -97,6 +98,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->tdma_given = 0 ;
   args_info->uart_given = 0 ;
   args_info->gpio_test_only_given = 0 ;
+  args_info->verbose_given = 0 ;
 }
 
 static
@@ -109,6 +111,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->tdma_flag = 0;
   args_info->uart_flag = 0;
   args_info->gpio_test_only_flag = 0;
+  args_info->verbose_flag = 0;
   
 }
 
@@ -124,6 +127,7 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->tdma_help = gengetopt_args_info_help[4] ;
   args_info->uart_help = gengetopt_args_info_help[5] ;
   args_info->gpio_test_only_help = gengetopt_args_info_help[6] ;
+  args_info->verbose_help = gengetopt_args_info_help[7] ;
   
 }
 
@@ -258,6 +262,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "uart", 0, 0 );
   if (args_info->gpio_test_only_given)
     write_into_file(outfile, "gpio-test-only", 0, 0 );
+  if (args_info->verbose_given)
+    write_into_file(outfile, "verbose", 0, 0 );
   
 
   i = EXIT_SUCCESS;
@@ -516,6 +522,7 @@ cmdline_parser_internal (
         { "tdma",	0, NULL, 0 },
         { "uart",	0, NULL, 0 },
         { "gpio-test-only",	0, NULL, 0 },
+        { "verbose",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
 
@@ -594,6 +601,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->gpio_test_only_flag), 0, &(args_info->gpio_test_only_given),
                 &(local_args_info.gpio_test_only_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "gpio-test-only", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* force VERBOSE mode.  */
+          else if (strcmp (long_options[option_index].name, "verbose") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->verbose_flag), 0, &(args_info->verbose_given),
+                &(local_args_info.verbose_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "verbose", '-',
                 additional_error))
               goto failure;
           

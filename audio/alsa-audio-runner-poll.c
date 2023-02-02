@@ -21,13 +21,13 @@
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
 
-uint8_t buf[BUFFER_SZ_BYTES];
-void *ch_bufs[CHANNELS] = {0};
+uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
+void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
-static unsigned int rate = RATE;
+static unsigned int rate = AUDIO_TEST_RATE;
 static unsigned int format = SND_PCM_FORMAT_S32_LE;
 
-static unsigned long int buffer_sz_frames = BUFFER_SZ_FRAMES;
+static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 
 pcmAlsa_device_t captureDevice = {0};
 pcmAlsa_device_t playbackDevice = {0};
@@ -56,7 +56,7 @@ static int open_stream(pcmAlsa_device_t *device, int mode)
 		return ret;
 	}
 
-	if ((ret = snd_pcm_hw_params_set_access(device->handle, hw_params, SAMPLE_ACCESS)) < 0)
+	if ((ret = snd_pcm_hw_params_set_access(device->handle, hw_params, AUDIO_TEST_SAMPLE_ACCESS)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set access type"));
 		return ret;
@@ -74,7 +74,7 @@ static int open_stream(pcmAlsa_device_t *device, int mode)
 		return ret;
 	}
 
-	if ((ret = snd_pcm_hw_params_set_channels(device->handle, hw_params, CHANNELS)) < 0)
+	if ((ret = snd_pcm_hw_params_set_channels(device->handle, hw_params, AUDIO_TEST_CHANNELS)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set channel count"));
 		return ret;
@@ -104,7 +104,7 @@ static int open_stream(pcmAlsa_device_t *device, int mode)
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot initialize software parameters structure"));
 		return ret;
 	}
-	if ((ret = snd_pcm_sw_params_set_avail_min(device->handle, sw_params, PERIOD_SZ_FRAMES)) < 0)
+	if ((ret = snd_pcm_sw_params_set_avail_min(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set minimum available count"));
 		return ret;
@@ -190,9 +190,9 @@ static void *audio_runner(void *p_data)
 									DLT_STRING("snd_pcm_readn"),
 									DLT_UINT32(r),
 									DLT_HEX32(pbuf[0]),
-									DLT_HEX32(pbuf[1 * PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[2 * PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[3 * PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[1*AUDIO_TEST_PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[2*AUDIO_TEST_PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[3*AUDIO_TEST_PERIOD_SZ_FRAMES]),
 									DLT_UINT32(nb_loops));
 						}
 
@@ -204,7 +204,7 @@ static void *audio_runner(void *p_data)
 						unsigned long *pbuf = (unsigned long *)(buf);
 
 						/* constant value, to quickly visualize output channel swap */
-						memset(&(pbuf[2 * PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * PERIOD_SZ_FRAMES);
+						memset(&(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * AUDIO_TEST_PERIOD_SZ_FRAMES);
 
 						if (0 == (nb_loops & 0x1F))
 						{
@@ -212,9 +212,9 @@ static void *audio_runner(void *p_data)
 									DLT_STRING("snd_pcm_writen"),
 									DLT_UINT32(r),
 									DLT_HEX32(pbuf[0]),
-									DLT_HEX32(pbuf[1 * PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[2 * PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[3 * PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[1 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+									DLT_HEX32(pbuf[3 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
 									DLT_UINT32(nb_loops));
 						}
 						r = snd_pcm_writen(playbackDevice.handle, ch_bufs, avail);
@@ -236,7 +236,7 @@ static void *audio_runner(void *p_data)
 	return (void *)ret;
 }
 
-int audio_init(pthread_t *runner, ebt_settings_t *settings)
+int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 
@@ -250,13 +250,13 @@ int audio_init(pthread_t *runner, ebt_settings_t *settings)
 
 	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: invalid settings"));
 		ret = -EINVAL;
 	}
 
 	if (EXIT_SUCCESS == ret)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init: Using "), DLT_STRING((SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init_poll: Using "), DLT_STRING((AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 		ret = open_stream(&playbackDevice, SND_PCM_NONBLOCK);
 		if (0 > ret)
@@ -302,12 +302,12 @@ int audio_init(pthread_t *runner, ebt_settings_t *settings)
 		/* actual sample buffer */
 		memset(buf, 0, sizeof(buf));
 
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init: creating runner"));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: creating runner"));
 
 		/* non-interleaved channel buffer offets */
-		for (int c = 0; c < CHANNELS; c++)
+		for (int c = 0; c < AUDIO_TEST_CHANNELS; c++)
 		{
-			ch_bufs[c] = (void *)((unsigned char *)buf + (c * SAMPLE_SZ_BYTES * PERIOD_SZ_FRAMES));
+			ch_bufs[c] = (void *)((unsigned char *)buf + (c * AUDIO_TEST_SAMPLE_SZ_BYTES * AUDIO_TEST_PERIOD_SZ_FRAMES));
 		}
 
 		ret = pthread_create(runner, NULL, audio_runner, (void *)settings);
@@ -315,7 +315,7 @@ int audio_init(pthread_t *runner, ebt_settings_t *settings)
 
 	if (0 > ret)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init: failed to creating runner"), DLT_INT32(ret));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: failed to creating runner"), DLT_INT32(ret));
 	}
 
 	return ret;
