@@ -15,7 +15,7 @@ include(GNUInstallDirs)
 add_executable(esg-bsp-test-audio
     main.c
     options/cmdline.c
-    audio/alsa-audio-runner.c
+    audio/alsa-audio-runner-wait.c
     elite/elite-tdma-runner.c
     elite/elite-uart-dsp-runner.c
     elite/elite-spidev.c
@@ -40,3 +40,7 @@ target_compile_options(esg-bsp-test-audio PUBLIC
     ${ALSA_CFLAGS_OTHER})
 
 install(TARGETS esg-bsp-test-audio DESTINATION bin)
+
+
+# also built ALSA example app.
+add_subdirectory(audio)

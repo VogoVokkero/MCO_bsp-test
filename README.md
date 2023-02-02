@@ -7,6 +7,16 @@ This application provides low-level stubbing for the BSP interfaces, to assess r
 
 Based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
+## ALSA transfert methods and ALSA example
+
+ESG "mco-audio-app" is implementin the 'poll/select' scheme, which is not the simplest, but back then did best match the 'multicore-tools/task-manager' scheme.
+In order to go back to the basics and test the vanilla ALSA example, the 'alsa-pôll-example' app can be built.
+This alsa example shall be kept unchanged, as a reference, it features all implemented schemes and must be launched with proper options to specifically test for poll/select.
+
+In our case, we will be looking into:
+- handling clean Start/Pause/Resume/Stop
+- handling clean X(-run/Recover scenarios (which is more or less the same problame than above).
+
 ## Elite : SPI/TDMA Protocol Stub
 
 Using Elite/SPI protocol, provide an audio frames streaming stub: 
