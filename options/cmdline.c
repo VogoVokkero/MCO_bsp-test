@@ -37,9 +37,9 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help            Print help and exit",
   "  -V, --version         Print version and exit",
   "  -l, --loops=INT       Number or cycles for each running.this is roughly the\n                          number of 20ms audio periods to process, or 10ms SPI\n                          messages\n                            (default=`1000')",
-  "      --no-audio        disable audio runner  (default=off)",
-  "      --no-tdma         disable tdma x-fer  (default=off)",
-  "      --no-uart         disable uart x-fer  (default=off)",
+  "      --audio           enable audio runner  (default=on)",
+  "      --tdma            enable tdma x-fer  (default=off)",
+  "      --uart            enable uart x-fer  (default=off)",
   "      --gpio-test-only  just check select() on gpio47  (default=off)",
   "\nGood luck.",
     0
@@ -93,9 +93,9 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->loops_given = 0 ;
-  args_info->no_audio_given = 0 ;
-  args_info->no_tdma_given = 0 ;
-  args_info->no_uart_given = 0 ;
+  args_info->audio_given = 0 ;
+  args_info->tdma_given = 0 ;
+  args_info->uart_given = 0 ;
   args_info->gpio_test_only_given = 0 ;
 }
 
@@ -105,9 +105,9 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->loops_arg = 1000;
   args_info->loops_orig = NULL;
-  args_info->no_audio_flag = 0;
-  args_info->no_tdma_flag = 0;
-  args_info->no_uart_flag = 0;
+  args_info->audio_flag = 1;
+  args_info->tdma_flag = 0;
+  args_info->uart_flag = 0;
   args_info->gpio_test_only_flag = 0;
   
 }
@@ -120,9 +120,9 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->loops_help = gengetopt_args_info_help[2] ;
-  args_info->no_audio_help = gengetopt_args_info_help[3] ;
-  args_info->no_tdma_help = gengetopt_args_info_help[4] ;
-  args_info->no_uart_help = gengetopt_args_info_help[5] ;
+  args_info->audio_help = gengetopt_args_info_help[3] ;
+  args_info->tdma_help = gengetopt_args_info_help[4] ;
+  args_info->uart_help = gengetopt_args_info_help[5] ;
   args_info->gpio_test_only_help = gengetopt_args_info_help[6] ;
   
 }
@@ -250,12 +250,12 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->loops_given)
     write_into_file(outfile, "loops", args_info->loops_orig, 0);
-  if (args_info->no_audio_given)
-    write_into_file(outfile, "no-audio", 0, 0 );
-  if (args_info->no_tdma_given)
-    write_into_file(outfile, "no-tdma", 0, 0 );
-  if (args_info->no_uart_given)
-    write_into_file(outfile, "no-uart", 0, 0 );
+  if (args_info->audio_given)
+    write_into_file(outfile, "audio", 0, 0 );
+  if (args_info->tdma_given)
+    write_into_file(outfile, "tdma", 0, 0 );
+  if (args_info->uart_given)
+    write_into_file(outfile, "uart", 0, 0 );
   if (args_info->gpio_test_only_given)
     write_into_file(outfile, "gpio-test-only", 0, 0 );
   
@@ -512,9 +512,9 @@ cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
         { "loops",	1, NULL, 'l' },
-        { "no-audio",	0, NULL, 0 },
-        { "no-tdma",	0, NULL, 0 },
-        { "no-uart",	0, NULL, 0 },
+        { "audio",	0, NULL, 0 },
+        { "tdma",	0, NULL, 0 },
+        { "uart",	0, NULL, 0 },
         { "gpio-test-only",	0, NULL, 0 },
         { 0,  0, 0, 0 }
       };
@@ -550,38 +550,38 @@ cmdline_parser_internal (
           break;
 
         case 0:	/* Long option with no short option */
-          /* disable audio runner.  */
-          if (strcmp (long_options[option_index].name, "no-audio") == 0)
+          /* enable audio runner.  */
+          if (strcmp (long_options[option_index].name, "audio") == 0)
           {
           
           
-            if (update_arg((void *)&(args_info->no_audio_flag), 0, &(args_info->no_audio_given),
-                &(local_args_info.no_audio_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "no-audio", '-',
+            if (update_arg((void *)&(args_info->audio_flag), 0, &(args_info->audio_given),
+                &(local_args_info.audio_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "audio", '-',
                 additional_error))
               goto failure;
           
           }
-          /* disable tdma x-fer.  */
-          else if (strcmp (long_options[option_index].name, "no-tdma") == 0)
+          /* enable tdma x-fer.  */
+          else if (strcmp (long_options[option_index].name, "tdma") == 0)
           {
           
           
-            if (update_arg((void *)&(args_info->no_tdma_flag), 0, &(args_info->no_tdma_given),
-                &(local_args_info.no_tdma_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "no-tdma", '-',
+            if (update_arg((void *)&(args_info->tdma_flag), 0, &(args_info->tdma_given),
+                &(local_args_info.tdma_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "tdma", '-',
                 additional_error))
               goto failure;
           
           }
-          /* disable uart x-fer.  */
-          else if (strcmp (long_options[option_index].name, "no-uart") == 0)
+          /* enable uart x-fer.  */
+          else if (strcmp (long_options[option_index].name, "uart") == 0)
           {
           
           
-            if (update_arg((void *)&(args_info->no_uart_flag), 0, &(args_info->no_uart_given),
-                &(local_args_info.no_uart_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "no-uart", '-',
+            if (update_arg((void *)&(args_info->uart_flag), 0, &(args_info->uart_given),
+                &(local_args_info.uart_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "uart", '-',
                 additional_error))
               goto failure;
           

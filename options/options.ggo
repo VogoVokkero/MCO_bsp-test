@@ -12,9 +12,9 @@ version "1.0"   # don't use version if you're using automake
 option  "loops"          l "Number or cycles for each running.\
 this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n"      int     optional default="1000"
 
-option  "no-audio"       - "disable audio runner"        flag       off
-option  "no-tdma"        - "disable tdma x-fer"        flag       off
-option  "no-uart"        - "disable uart x-fer"        flag       off
+option  "audio"       - "enable audio runner"        flag       on
+option  "tdma"        - "enable tdma x-fer"        flag       off
+option  "uart"        - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
 
 #option  "funct-opt"       F "A function option"    optional 

@@ -57,17 +57,17 @@ int main(int argc, char **argv)
 		}
 	}
 
-	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_audio_flag))
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.audio_flag))
 	{
 		ret = audio_init(&test_runner[RUNNER_AUDIO], (void*)&g_settings);
 	}
 
-	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_tdma_flag))
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.tdma_flag))
 	{
 		ret = elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], (void*)&g_settings);
 	}
 
-	if ((EXIT_SUCCESS == ret) && (0 == args_info.no_uart_flag))
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.uart_flag))
 	{
 		ret = elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], (void*)&g_settings);
 	}

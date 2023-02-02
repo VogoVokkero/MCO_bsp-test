@@ -45,21 +45,21 @@ struct gengetopt_args_info
  original value given at command line.  */
   const char *loops_help; /**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  help description.  */
-  int no_audio_flag;	/**< @brief disable audio runner (default=off).  */
-  const char *no_audio_help; /**< @brief disable audio runner help description.  */
-  int no_tdma_flag;	/**< @brief disable tdma x-fer (default=off).  */
-  const char *no_tdma_help; /**< @brief disable tdma x-fer help description.  */
-  int no_uart_flag;	/**< @brief disable uart x-fer (default=off).  */
-  const char *no_uart_help; /**< @brief disable uart x-fer help description.  */
+  int audio_flag;	/**< @brief enable audio runner (default=on).  */
+  const char *audio_help; /**< @brief enable audio runner help description.  */
+  int tdma_flag;	/**< @brief enable tdma x-fer (default=off).  */
+  const char *tdma_help; /**< @brief enable tdma x-fer help description.  */
+  int uart_flag;	/**< @brief enable uart x-fer (default=off).  */
+  const char *uart_help; /**< @brief enable uart x-fer help description.  */
   int gpio_test_only_flag;	/**< @brief just check select() on gpio47 (default=off).  */
   const char *gpio_test_only_help; /**< @brief just check select() on gpio47 help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int loops_given ;	/**< @brief Whether loops was given.  */
-  unsigned int no_audio_given ;	/**< @brief Whether no-audio was given.  */
-  unsigned int no_tdma_given ;	/**< @brief Whether no-tdma was given.  */
-  unsigned int no_uart_given ;	/**< @brief Whether no-uart was given.  */
+  unsigned int audio_given ;	/**< @brief Whether audio was given.  */
+  unsigned int tdma_given ;	/**< @brief Whether tdma was given.  */
+  unsigned int uart_given ;	/**< @brief Whether uart was given.  */
   unsigned int gpio_test_only_given ;	/**< @brief Whether gpio-test-only was given.  */
 
 } ;
