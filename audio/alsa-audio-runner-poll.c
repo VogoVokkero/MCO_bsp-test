@@ -25,7 +25,7 @@ uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
 void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
 static unsigned int rate = AUDIO_TEST_RATE;
-static unsigned int format = SND_PCM_FORMAT_S32_LE;
+static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
 
 static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 

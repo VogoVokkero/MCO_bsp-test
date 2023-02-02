@@ -14,21 +14,25 @@
 
 #include "esg-bsp-test.h"
  
-static char *device = "plughw:0,0";         /* playback device */
-static snd_pcm_format_t format = SND_PCM_FORMAT_S16;    /* sample format */
+//static char *device = "plughw:0,0";         /* playback device */
+//static char *device = "hw:0,0";         /* playback device */
+
+static char *device = ALSA_DEVICE;
+
+static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;    /* sample format */
 static unsigned int rate = AUDIO_TEST_RATE;           /* stream rate */
-static unsigned int channels = 1;           /* count of channels */
+static unsigned int channels = 4;           /* count of channels */
 static unsigned int buffer_time = 500000;       /* ring buffer length in us */
 static unsigned int period_time = 100000;       /* period time in us */
 static double freq = 440;               /* sinusoidal wave frequency in Hz */
-static int verbose = 0;                 /* verbose flag */
+static int verbose = 1;                 /* verbose flag */
 static int resample = 1;                /* enable alsa-lib resampling */
 static int period_event = 0;                /* produce poll event after each period */
  
 static snd_pcm_sframes_t buffer_size;
 static snd_pcm_sframes_t period_size;
 static snd_output_t *output = NULL;
- 
+
 static void generate_sine(const snd_pcm_channel_area_t *areas, 
               snd_pcm_uframes_t offset,
               int count, double *_phase)
