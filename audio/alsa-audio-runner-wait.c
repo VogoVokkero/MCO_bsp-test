@@ -18,6 +18,7 @@
  */
 #include "esg-bsp-test.h"
 #include "alsa-audio-runner.h"
+#include "math.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
 
@@ -31,7 +32,6 @@ static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 
 static pcmAlsa_device_t captureDevice = {0};
 static pcmAlsa_device_t playbackDevice = {0};
-
 
 static int open_stream(pcmAlsa_device_t *device, int mode)
 {
@@ -169,38 +169,36 @@ static void *audio_runner(void *p_data)
 			avail = snd_pcm_avail_update(captureDevice.handle);
 			if (avail > 0)
 			{
+				unsigned long *pbuf = (unsigned long *)(buf);
+
 				if (avail > AUDIO_TEST_BUFFER_SZ_BYTES)
 					avail = AUDIO_TEST_BUFFER_SZ_BYTES;
 
 				if (AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED)
 				{
 					r = snd_pcm_readn(captureDevice.handle, ch_bufs, avail);
-
-					//if (0 == (nb_loops & 0x1F))
+					if ((0 > r) || (abs(pbuf[0]) < 0x00010000U))
 					{
-						unsigned long *pbuf = (unsigned long *)(buf);
+
 
 						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-								DLT_STRING("snd_pcm_readn"),
+								DLT_STRING("XRUN ? snd_pcm_readn"),
 								DLT_UINT32(r),
 								DLT_HEX32(pbuf[0]),
-								DLT_HEX32(pbuf[1*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-								DLT_HEX32(pbuf[2*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-								DLT_HEX32(pbuf[3*AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[1 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[3 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
 								DLT_UINT32(nb_loops));
 					}
-
 				}
 				else
 				{
 					r = snd_pcm_readi(captureDevice.handle, buf, avail);
-
-				//	if (0 == (nb_loops & 0x1F))
+					if ((0 > r) || (abs(pbuf[0]) < 0x00010000U))
 					{
-						unsigned long *pbuf = (unsigned long *)(buf);
 
 						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-								DLT_STRING("snd_pcm_readi"),
+								DLT_STRING("X-RUN snd_pcm_readi ?"),
 								DLT_UINT32(r),
 								DLT_HEX32(pbuf[0]),
 								DLT_HEX32(pbuf[1]),
@@ -227,17 +225,17 @@ static void *audio_runner(void *p_data)
 					unsigned long *pbuf = (unsigned long *)(buf);
 
 					/* constant value, to quickly visualize output channel swap */
-					memset(&(pbuf[2*AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t)*AUDIO_TEST_PERIOD_SZ_FRAMES);
+					memset(&(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * AUDIO_TEST_PERIOD_SZ_FRAMES);
 
-					if (0 == (nb_loops & 0x1F))
+					if (0 /*== (nb_loops & 0x1F)*/)
 					{
 						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
 								DLT_STRING("snd_pcm_writen"),
 								DLT_UINT32(r),
 								DLT_HEX32(pbuf[0]),
-								DLT_HEX32(pbuf[1*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-								DLT_HEX32(pbuf[2*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-								DLT_HEX32(pbuf[3*AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[1 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
+								DLT_HEX32(pbuf[3 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
 								DLT_UINT32(nb_loops));
 					}
 					r = snd_pcm_writen(playbackDevice.handle, ch_bufs, avail);
