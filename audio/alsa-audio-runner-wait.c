@@ -21,16 +21,16 @@
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
 
-uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
-void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
+static uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
+static void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
 static unsigned int rate = AUDIO_TEST_RATE;
 static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
 
 static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 
-pcmAlsa_device_t captureDevice = {0};
-pcmAlsa_device_t playbackDevice = {0};
+static pcmAlsa_device_t captureDevice = {0};
+static pcmAlsa_device_t playbackDevice = {0};
 
 
 static int open_stream(pcmAlsa_device_t *device, int mode)

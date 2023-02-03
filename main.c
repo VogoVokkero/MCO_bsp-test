@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.audio_flag))
 	{
-		ret = audio_init_wait(&test_runner[RUNNER_AUDIO], (void*)&g_settings);
+		ret = audio_init_poll(&test_runner[RUNNER_AUDIO], (void*)&g_settings);
 	}
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.tdma_flag))

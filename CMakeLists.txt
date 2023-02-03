@@ -16,6 +16,7 @@ add_executable(esg-bsp-test-audio
     main.c
     options/cmdline.c
     audio/alsa-audio-runner-wait.c
+    audio/alsa-audio-runner-poll.c
     elite/elite-tdma-runner.c
     elite/elite-uart-dsp-runner.c
     elite/elite-spidev.c

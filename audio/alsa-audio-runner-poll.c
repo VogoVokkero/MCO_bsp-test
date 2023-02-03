@@ -19,18 +19,18 @@
 #include "esg-bsp-test.h"
 #include "alsa-audio-runner.h"
 
-DLT_DECLARE_CONTEXT(dlt_ctxt_audio);
+DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
-uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
-void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
+static uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
+static void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
 static unsigned int rate = AUDIO_TEST_RATE;
 static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
 
 static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 
-pcmAlsa_device_t captureDevice = {0};
-pcmAlsa_device_t playbackDevice = {0};
+static pcmAlsa_device_t captureDevice = {0};
+static pcmAlsa_device_t playbackDevice = {0};
 
 static int open_stream(pcmAlsa_device_t *device, int mode)
 {
@@ -110,7 +110,7 @@ static int open_stream(pcmAlsa_device_t *device, int mode)
 		return ret;
 	}
 
-	if ((ret = snd_pcm_sw_params_set_start_threshold(device->handle, sw_params, 0U)) < 0)
+	if ((ret = snd_pcm_sw_params_set_start_threshold(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set start mode"));
 		return ret;
@@ -156,12 +156,9 @@ static void *audio_runner(void *p_data)
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
 
 		FD_ZERO(&read_fds);
-		FD_ZERO(&write_fds);
 		FD_ZERO(&except_fds);
 
 		FD_SET(captureDevice.fds.ufds->fd, &read_fds);
-		FD_SET(playbackDevice.fds.ufds->fd, &write_fds);
-		//  FD_SET(TSK_Info[taskId].fd_watch[i].id, &except_fds);
 
 		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
 		{
@@ -169,7 +166,7 @@ static void *audio_runner(void *p_data)
 			snd_pcm_sframes_t r = 0;
 
 			// Attente passive
-			ret = select(1, &read_fds, &write_fds, &except_fds, NULL);
+			ret = select(1, &read_fds, NULL, &except_fds, NULL);
 			if (0 > ret)
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("select failed"));
@@ -180,36 +177,16 @@ static void *audio_runner(void *p_data)
 
 				if (FD_ISSET(captureDevice.fds.ufds->fd, &read_fds))
 				{
-						r = snd_pcm_readn(captureDevice.handle, ch_bufs, avail);
+					unsigned long *pbuf = (unsigned long *)(buf);
 
+					r = snd_pcm_readn(captureDevice.handle, ch_bufs, avail);
+					if (0 < r)
+					{
 						if (0 == (nb_loops & 0x1F))
 						{
-							unsigned long *pbuf = (unsigned long *)(buf);
 
 							DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
 									DLT_STRING("snd_pcm_readn"),
-									DLT_UINT32(r),
-									DLT_HEX32(pbuf[0]),
-									DLT_HEX32(pbuf[1*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[2*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[3*AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_UINT32(nb_loops));
-						}
-
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_read"), DLT_INT32(r));
-				}
-
-				if (FD_ISSET(playbackDevice.fds.ufds->fd, &read_fds))
-				{
-						unsigned long *pbuf = (unsigned long *)(buf);
-
-						/* constant value, to quickly visualize output channel swap */
-						memset(&(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * AUDIO_TEST_PERIOD_SZ_FRAMES);
-
-						if (0 == (nb_loops & 0x1F))
-						{
-							DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-									DLT_STRING("snd_pcm_writen"),
 									DLT_UINT32(r),
 									DLT_HEX32(pbuf[0]),
 									DLT_HEX32(pbuf[1 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
@@ -217,9 +194,20 @@ static void *audio_runner(void *p_data)
 									DLT_HEX32(pbuf[3 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
 									DLT_UINT32(nb_loops));
 						}
-						r = snd_pcm_writen(playbackDevice.handle, ch_bufs, avail);
 
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_read"), DLT_INT32(r));
+
+						/* constant value, to quickly visualize output channel swap */
+						memset(&(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * AUDIO_TEST_PERIOD_SZ_FRAMES);
+
+						r = snd_pcm_writen(playbackDevice.handle, ch_bufs, r);
+
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
+					}
+				}
+				else
+				{
+					DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn failed with"), DLT_INT32(r));
 				}
 			}
 		}
