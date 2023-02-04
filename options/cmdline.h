@@ -45,7 +45,7 @@ struct gengetopt_args_info
  original value given at command line.  */
   const char *loops_help; /**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  help description.  */
-  int audio_flag;	/**< @brief enable audio runner (default=on).  */
+  int audio_flag;	/**< @brief enable audio runner (default=off).  */
   const char *audio_help; /**< @brief enable audio runner help description.  */
   int tdma_flag;	/**< @brief enable tdma x-fer (default=off).  */
   const char *tdma_help; /**< @brief enable tdma x-fer help description.  */

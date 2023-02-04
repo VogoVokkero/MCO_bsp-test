@@ -37,12 +37,12 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help            Print help and exit",
   "  -V, --version         Print version and exit",
   "  -l, --loops=INT       Number or cycles for each running.this is roughly the\n                          number of 20ms audio periods to process, or 10ms SPI\n                          messages\n                            (default=`1000')",
-  "      --audio           enable audio runner  (default=on)",
+  "      --audio           enable audio runner  (default=off)",
   "      --tdma            enable tdma x-fer  (default=off)",
   "      --uart            enable uart x-fer  (default=off)",
   "      --gpio-test-only  just check select() on gpio47  (default=off)",
   "      --verbose         force VERBOSE mode  (default=off)",
-  "\nGood luck.",
+  "\nExamples:\n\t#>esg-bsp-test --audio --uart -l 10000000 --verbose\nGood luck.",
     0
 };
 
@@ -107,7 +107,7 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->loops_arg = 1000;
   args_info->loops_orig = NULL;
-  args_info->audio_flag = 1;
+  args_info->audio_flag = 0;
   args_info->tdma_flag = 0;
   args_info->uart_flag = 0;
   args_info->gpio_test_only_flag = 0;

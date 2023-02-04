@@ -35,7 +35,8 @@ manual dump of the slave-reay config:
 
 * new arguments must be added using the gengetopt pattern, see 'options' folfer
 * build in yocto is done using 'bitbake -c cleansstate esg-bsp-test-audio; bitbake esg-bsp-test-audio', the recipe is in meta-vogo-mco/recipes-bsp
-* on native PC, make sure to install 'sudo apt install gpiod libgpiod-dev', the recipe will need to dep too of course.
+* on native PC, make sure to install 'sudo apt install gpiod libgpiod-dev libasound2-dev dlt-daemon libdlt-dev', the recipe will need to dep too of course.
+
 
 ## Troubleshooting
 
