@@ -13,6 +13,72 @@ DLT_DECLARE_CONTEXT(dlt_ctxt_term); // terminal traces, through trace uart, TODO
 
 int uart_elite_fd;
 
+static elite_uart_ecu_ids_t elite_uart_ecu_string_to_id(const char *ecu_str)
+{
+	elite_uart_ecu_ids_t id = ELITE_UART_ECU_INVALID;
+
+	switch (ecu_str[0])
+	{
+	case 'D': /* assuming DSP */
+	case 'd':
+	case 'A':
+	case 'a':
+		id = ELITE_UART_ECU_A;
+		break;
+
+	case 'T': /* assuming TST, not TBT */
+	case 't':
+		id = ELITE_UART_ECU_R;
+		break;
+
+	case 'B': /* assuming BCK */
+	case 'b':
+		id = ELITE_UART_ECU_H;
+		break;
+
+	case 'C': /* assuming CFG */
+	case 'c':
+		id = ELITE_UART_ECU_C;
+		break;
+
+	default:
+		id = ELITE_UART_ECU_INVALID;
+		break;
+	}
+
+	return id;
+}
+
+static const char *elite_uart_ecu_id_to_string(elite_uart_ecu_ids_t id)
+{
+	const char *str = "invalid-ecu";
+
+	switch (id)
+	{
+	case ELITE_UART_ECU_A: /* assuming DSP */
+		str = "DSP";
+		break;
+
+	case ELITE_UART_ECU_R:
+		str = "TST";
+		break;
+
+	case ELITE_UART_ECU_H: /* assuming BCK */
+		str = "HMI";
+		break;
+
+	case ELITE_UART_ECU_C: /* assuming CFG */
+		str = "CFG";
+		break;
+
+	default:
+		str = "invalid-ecu";
+		break;
+	}
+
+	return str;
+}
+
 static void *elite_uart_dsp_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
@@ -32,9 +98,9 @@ static void *elite_uart_dsp_runner(void *p_data)
 		char c = 0;
 
 		elite_uart_frame_t frame = {0};
-		ssize_t max_size = UART_FRAME_PAYLOAD_STR_SZ_BYTES;
+		ssize_t max_size = ELITE_UART_FRAME_PAYLOAD_STR_SZ_BYTES;
 
-		uint32_t pctl_field = UART_PCTL_ELITE_FIELD_SOF;
+		uint32_t pctl_field = ELITE_UART_FIELD_SOF;
 
 		while (('\n' != c) && ('\r' != c) && (0 < max_size--))
 		{
@@ -43,7 +109,7 @@ static void *elite_uart_dsp_runner(void *p_data)
 
 			if (sizeof(char) == bytes)
 			{
-				if (':' == c)
+				if (ELITE_UART_FIELD_SEPARATOR == c)
 				{
 					pctl_field++;
 				}
@@ -57,12 +123,23 @@ static void *elite_uart_dsp_runner(void *p_data)
 					/* decode per field */
 					switch (pctl_field)
 					{
-					case UART_PCTL_ELITE_FIELD_SOF:
-						frame.sof[frame.sof_sz] = c;
-						frame.sof_sz++;
+					case ELITE_UART_FIELD_SOF:
+						if (ELITE_UART_ECU_FROM == c)
+						{
+							frame.dst = elite_uart_ecu_string_to_id(frame.sof);
+						}
+
+						frame.sof[frame.sof_pos] = c;
+						frame.sof_pos++;
+
+						if (ELITE_UART_FRAME_SOF_STR_SZ_BYTES == frame.sof_pos)
+						{
+							frame.src = elite_uart_ecu_string_to_id(frame.sof + ELITE_UART_ECU_STRING_SZ + 1);
+						}
+
 						break;
 
-					case UART_PCTL_ELITE_FIELD_RAW_SZ:
+					case ELITE_UART_FIELD_RAW_SZ:
 						if (0 != isdigit(c))
 						{
 							frame.raw_sz = frame.raw_sz * 10 + (c - '0');
@@ -73,7 +150,7 @@ static void *elite_uart_dsp_runner(void *p_data)
 						}
 						break;
 
-					case UART_PCTL_ELITE_FIELD_PAYLOAD:
+					case ELITE_UART_FIELD_PAYLOAD:
 
 						frame.payload[frame.payload_sz] = c;
 						frame.payload_sz++;
@@ -97,9 +174,9 @@ static void *elite_uart_dsp_runner(void *p_data)
 		}
 
 		frame.payload[frame.payload_sz] = '\0';
-		frame.sof[frame.sof_sz] = '\0';
+		frame.sof[frame.sof_pos] = '\0';
 
-		if (0 < (frame.sof_sz + frame.payload_sz))
+		if (0 < (frame.sof_pos + frame.payload_sz))
 		{
 			if (0 < frame.raw_sz)
 			{
@@ -121,7 +198,11 @@ static void *elite_uart_dsp_runner(void *p_data)
 			}
 			else
 			{
-				DLT_LOG(dlt_ctxt_udsp, DLT_LOG_INFO, DLT_STRING("udsp_runner got frame"), DLT_STRING(frame.sof), DLT_STRING(frame.payload)); // todo
+				DLT_LOG(dlt_ctxt_udsp, DLT_LOG_INFO, DLT_STRING("udsp_runner got frame"),
+						DLT_STRING(elite_uart_ecu_id_to_string(frame.dst)),
+						DLT_STRING(elite_uart_ecu_id_to_string(frame.src)),
+						DLT_STRING(frame.sof),
+						DLT_STRING(frame.payload)); // todo
 			}
 		}
 	}
