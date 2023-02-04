@@ -5,53 +5,11 @@
  * - scan byte byte until RAW or Line frames can be discriminated
  */
 #include "esg-bsp-test.h"
-#include <termios.h>
-#include <ctype.h>
+#include "elite-uart.h"
 #include "dlt/dlt_user.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_udsp);
 DLT_DECLARE_CONTEXT(dlt_ctxt_term); // terminal traces, through trace uart, TODO
-
-#ifdef __arm__
-#define UART_ELITE "/dev/ttymxc1" /* ELITE uart protocol */
-#define UART_TRACE "/dev/ttymxc4" /* TRACEs */
-#else
-/* idealy we don't give a fork, whether 'dsp' or 'tst'
- * when using tty0tty on native PC:
- *  - tnt0 will be the emulated STM32 uart
- *  - tnt1 will be the looped emulated uart, for injection to tnt0
- *  - tnt2 will be the trace uart, emulates trace from STM32
- */
-#define UART_ELITE "/dev/tnt0" /* ELITE uart protocol */
-#define UART_TRACE "/dev/tnt2" /* TRACEs */
-#endif
-
-#define UART_FRAME_SOF_STR_SZ_BYTES 8U /*"DST<SRC"*/
-#define UART_FRAME_RAW_STR_SZ_BYTES 4U /*"500"*/
-#define UART_FRAME_PAYLOAD_STR_SZ_BYTES (512U - 7U - 3U)
-
-enum elite_uart_ptcl_fields
-{
-	UART_PCTL_ELITE_FIELD_SOF = 0,
-	UART_PCTL_ELITE_FIELD_RAW_SZ = 1,
-	UART_PCTL_ELITE_FIELD_PAYLOAD = 2,
-	UART_PCTL_ELITE_FIELD_INVALID = 3 // todo
-};
-
-/* Simplified UART protocol version for the sake of this test suite
- * we just need to know if this is a RAW frame, or an ASCII frame.
- */
-typedef struct
-{
-	char sof[UART_FRAME_SOF_STR_SZ_BYTES];
-	ssize_t sof_sz;
-
-	char payload[UART_FRAME_PAYLOAD_STR_SZ_BYTES];
-	ssize_t payload_sz;
-
-	ssize_t raw_sz;
-
-} elite_uart_frame_t;
 
 int uart_elite_fd;
 
@@ -239,13 +197,6 @@ int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings)
 
 	if (EXIT_SUCCESS == ret)
 	{
-		/*
-		char buff[200];
-		while (read(uart_elite_fd, &buff, 200) > 0)
-		{
-			// printf("flushing...\n");
-		}*/
-
 		ret = pthread_create(runner, NULL, elite_uart_dsp_runner, (void *)settings);
 
 		if (EXIT_SUCCESS != ret)

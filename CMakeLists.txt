@@ -17,7 +17,7 @@ add_executable(esg-bsp-test
     options/cmdline.c
     audio/alsa-audio-runner-wait.c
     audio/alsa-audio-runner-poll.c
-    uart/elite-uart-dsp-runner.c
+    uart/elite-uart-runner.c
     elite/elite-tdma-runner.c
     elite/elite-spidev.c
     elite/elite-slave-ready-gpio.c

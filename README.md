@@ -7,7 +7,7 @@ This application provides low-level stubbing for the BSP interfaces, to assess r
 
 Based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
-## ALSA transfert methods and ALSA example
+### ALSA transfert methods and ALSA example
 
 ESG "mco-audio-app" is implementin the 'poll/select' scheme, which is not the simplest, but back then did best match the 'multicore-tools/task-manager' scheme.
 In order to go back to the basics and test the vanilla ALSA example, the 'alsa-pôll-example' app can be built.
@@ -16,6 +16,12 @@ This alsa example shall be kept unchanged, as a reference, it features all imple
 In our case, we will be looking into:
 - handling clean Start/Pause/Resume/Stop
 - handling clean X(-run/Recover scenarios (which is more or less the same problame than above).
+
+**use option '--audio' to activate the audio loop.**
+
+### reference alsa application
+
+a ref app from the ALSA projet is also built as 'alsa-poll-example'
 
 ## Elite : SPI/TDMA Protocol Stub
 
@@ -30,6 +36,19 @@ manual dump of the slave-reay config:
 ```
 /sys/class/gpio/gpio47# cat active_low consumers direction edge value
 ```
+
+**use option '--tdma' to activate the spi/tdma runner.**
+
+## Elite UART Protocol
+
+this app will open ttymxc* when built for arm, or tnt0 when build for native PC.
+/dev/tnt0 is created by the tty0tty module, it's usage is documented here: https://github.com/freemed/tty0tty
+
+the idea is tha you can inject a message in /dev/tnt1 via a script, and it will be received on /dev/tnt0 by the test app, and parsed.
+
+At this moment, the parser just deals with SOF, RAW-size fields, the reset being just payload.
+
+**use option '--uart' to activate the uart runner.**
 
 ## Improving and Building
 

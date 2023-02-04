@@ -1,5 +1,6 @@
 #ifndef ELITE_SPIDEV
 #define ELITE_SPIDEV
+#pragma once
 
 #define SPI_STM_SPEED  4000000
 
