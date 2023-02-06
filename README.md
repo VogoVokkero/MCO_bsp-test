@@ -1,8 +1,8 @@
-ESG BSP Test Suite : Audio and SPI
-==================================
+ESG BSP Test Suite
+==================
 
 ## Overview
-### Principle and Usage
+#### Principle and Usage
 
 This application provides low-level stubbing for the BSP interfaces, to assess robustness.
 The idea is that you can enable
@@ -17,27 +17,31 @@ Some interfaces, like uart, can be easily debugged PC-side, using the tty0tty ua
 
 For performances related test on the target however, make sure to set -O2 (default for the yocto toolchain) and remove the no-omit-fp flag.
 
-### Tracing
-Most of the debugging on the target (when built with recipe _esg-bsp-test_ in yocto) is best done using DLT traces, the trace projerct for this app is located [here|https://github.com/VogoVokkero/dlt-client/blob/develop/resources/A8375/btst.dlp].
+!!! See possible options with `--help`, you need to activate at least one runner.
+
+#### Tracing
+Most of the debugging on the target (when built with recipe _esg-bsp-test_ in yocto) is best done using DLT traces, the trace projerct for this app is located [here](https://github.com/VogoVokkero/dlt-client/blob/develop/resources/A8375/btst.dlp).
 Traces are crucial for real-time uses, e.g. for the audio, the default scenario expects you to feed continuous audio on ESG-IN1, and traces will report lack of levels on this input.
+
+To enable trace on PC/Native side, you may have to hack the owner or _/tmp/dlt_ with this a chown command, just add this pipe to your group.  
 
 ## Audio Loop
 
 The Audio runner is based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
-### ALSA transfert methods and ALSA example
+#### ALSA transfert methods and ALSA example
 
-ESG "mco-audio-app" is implementin the 'poll/select' scheme, which is not the simplest, but back then did best match the 'multicore-tools/task-manager' scheme.
-In order to go back to the basics and test the vanilla ALSA example, the 'alsa-pôll-example' app can be built.
+ESG _mco-audio-app_ is implementin the 'poll/select' scheme, which is not the simplest, but back then did best match the 'multicore-tools/task-manager' scheme.
+In order to go back to the basics and test the vanilla ALSA example, the _alsa-poll-example_ app can be built.
 This alsa example shall be kept unchanged, as a reference, it features all implemented schemes and must be launched with proper options to specifically test for poll/select.
 
 In our case, we will be looking into:
 - handling clean Start/Pause/Resume/Stop
 - handling clean X(-run/Recover scenarios (which is more or less the same problame than above).
 
-**use option '--audio' to activate the audio loop.**
+!!! use option `--audio` to activate the audio loop.
 
-### reference alsa application
+#### reference alsa application
 
 a ref app from the ALSA projet is also built as 'alsa-poll-example'
 
@@ -55,18 +59,49 @@ manual dump of the slave-reay config:
 /sys/class/gpio/gpio47# cat active_low consumers direction edge value
 ```
 
-**use option '--tdma' to activate the spi/tdma runner.**
+!!! use option `--tdma` to activate the audio loop.
 
 ## Elite UART Protocol
+
+#### test and debug on PC
 
 this app will open ttymxc* when built for arm, or tnt0 when build for native PC.
 /dev/tnt0 is created by the tty0tty module, it's usage is documented here: https://github.com/freemed/tty0tty
 
-the idea is tha you can inject a message in /dev/tnt1 via a script, and it will be received on /dev/tnt0 by the test app, and parsed.
+the idea is that:
+* you can inject a message in __/dev/tnt1__ via a script
+* it will be received by the test app on __/dev/tnt0__ and parsed.
+* dlt traces will let you know whatg the test app does of it
+
+!!! use option `--uart` to activate the audio loop.
+
+#### getting, building and running tty0tty
+
+```
+   git clone git@github.com:freemed/tty0tty.git
+   cd tty0tty/module/
+   make
+   sudo make modules_install
+   sudo insmod /lib/modules/5.15.0-58-generic/extra/tty0tty.ko
+```
+
+Note that you must be part of the _dialout_ group, to use the devices.
+
+```
+crw-rw---- 1 root dialout 236, 0 févr.  6 11:35 /dev/tnt0
+crw-rw---- 1 root dialout 236, 1 févr.  6 11:35 /dev/tnt1
+```
+
+#### Elite uart protocol parser
 
 At this moment, the parser just deals with SOF, RAW-size fields, the reset being just payload.
+As an example, emulatinf an STM32 message: 
 
-**use option '--uart' to activate the uart runner.**
+
+| Source   |  Dest  | Type  | Emulated message  | DLT trace from parser (may change)  |
+|---|---|---|---|---|
+| STM32   |  BSP-test-app  | ASCII  | `$>echo "DSP<TST::VERSION" > /dev/tnt1` | BTST UDSP udsp_runner got frame DSP TST DSP<TST VERSION |
+| STM32  | BSP-test-app  | RAW  | `$>echo "DSP<TST:8:ABCD1234" > /dev/tnt1`  | BTST UDSP udsp_runner got RAW frame 0x41 0x42 0x43 0x44 0x31 0x32 0x33 0x34  |
 
 ## Improving and Building
 
