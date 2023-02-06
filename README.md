@@ -1,11 +1,29 @@
 ESG BSP Test Suite : Audio and SPI
 ==================================
 
+## Overview
+### Principle and Usage
+
 This application provides low-level stubbing for the BSP interfaces, to assess robustness.
+The idea is that you can enable
+* only one subsystem, like audio, spi transfert, uart parsing etc... and insure the elementary bricks are robust.
+* select any combo of interface, and check is when combined, the system is robust.
+* each interface is implemented using a init/loop scheme, with a so-called 'runner' that is executed as a pthread. The main process just waits (joins) all active runners.
+
+Some interfaces, like uart, can be easily debugged PC-side, using the tty0tty uart emulator, and running with gdb. In this case, make sure to enable debug flags in the CMakeLists, for instance:
+```
+-g -O0 -fno-omit-frame-pointer
+```
+
+For performances related test on the target however, make sure to set -O2 (default for the yocto toolchain) and remove the no-omit-fp flag.
+
+### Tracing
+Most of the debugging on the target (when built with recipe _esg-bsp-test_ in yocto) is best done using DLT traces, the trace projerct for this app is located [here|https://github.com/VogoVokkero/dlt-client/blob/develop/resources/A8375/btst.dlp].
+Traces are crucial for real-time uses, e.g. for the audio, the default scenario expects you to feed continuous audio on ESG-IN1, and traces will report lack of levels on this input.
 
 ## Audio Loop
 
-Based on a sample app from http://equalarea.com/paul/alsa-audio.html
+The Audio runner is based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
 ### ALSA transfert methods and ALSA example
 

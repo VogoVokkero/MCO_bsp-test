@@ -28,8 +28,11 @@ int main(int argc, char **argv)
 	struct gengetopt_args_info args_info;
 
 	/* let's call our cmdline parser */
-	if (cmdline_parser(argc, argv, &args_info) != 0)
+	if ((cmdline_parser(argc, argv, &args_info) != 0) || (1 == argc))
+	{
+		cmdline_parser_print_help();
 		exit(1);
+	}
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
