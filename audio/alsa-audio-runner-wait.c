@@ -179,8 +179,6 @@ static void *audio_runner(void *p_data)
 					r = snd_pcm_readn(captureDevice.handle, ch_bufs, avail);
 					if ((0 > r) || (abs(pbuf[0]) < 0x00010000U))
 					{
-
-
 						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
 								DLT_STRING("XRUN ? snd_pcm_readn"),
 								DLT_UINT32(r),
@@ -284,7 +282,8 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init_wait: Using "), DLT_STRING((AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
-		if ((ret = ret = open_stream(&playbackDevice, SND_PCM_NONBLOCK)) < 0)
+		/* we block waiting capture PCM, don't block with playback PCM */
+		if ((ret = open_stream(&playbackDevice, SND_PCM_NONBLOCK)) < 0)
 		{
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_PLAYBACK"));
 		}
@@ -296,34 +295,7 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 		{
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_CAPTURE"));
 		}
-	}
 
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_prepare(playbackDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_prepare(captureDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_start(captureDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
 		/* actual sample buffer */
 		memset(buf, 0, sizeof(buf));
 
@@ -332,7 +304,34 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 		{
 			ch_bufs[c] = (void *)((unsigned char *)buf + (c * AUDIO_TEST_SAMPLE_SZ_BYTES * AUDIO_TEST_PERIOD_SZ_FRAMES));
 		}
+	}
 
+	if (EXIT_SUCCESS == ret)
+	{
+		if ((ret = snd_pcm_prepare(playbackDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare playbackDevice"));
+		}
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		if ((ret = snd_pcm_prepare(captureDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare captureDevice"));
+		}
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		if ((ret = snd_pcm_start(captureDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start captureDevice"));
+		}
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
 		ret = pthread_create(runner, NULL, audio_runner, (void *)settings);
 	}
 
