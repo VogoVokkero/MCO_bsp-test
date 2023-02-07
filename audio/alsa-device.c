@@ -273,7 +273,7 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
    }
    else
    {
-       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_link OK"));
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_link OK"));
    }
 #endif
 
@@ -356,6 +356,19 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
       else
       {
          DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn wrong len (err != len) "), DLT_UINT32(err), DLT_UINT32(len));
+      }
+   }
+   else
+   {
+      if (abs(((int32_t*)ch_buf[0])[0]) < 0x00002000U)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
+                 DLT_STRING("XRUN ? snd_pcm_readn"),
+                 DLT_STRING(snd_strerror(err)),
+                 DLT_HEX32(((uint32_t*)ch_buf[0])[0]),
+                 DLT_HEX32(((uint32_t*)ch_buf[1])[0]),
+                 DLT_HEX32(((uint32_t*)ch_buf[2])[0]),
+                 DLT_HEX32(((uint32_t*)ch_buf[3])[0]));
       }
    }
    return err;
