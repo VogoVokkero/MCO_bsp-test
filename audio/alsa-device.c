@@ -321,7 +321,7 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG, DLT_STRING("alsa_device_readn"));
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_readn"));
 
    if ((err = snd_pcm_readn(dev->capture_handle, ch_buf, len)) != len)
    {
@@ -329,27 +329,25 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
       {
          if (err == -EPIPE)
          {
-            fprintf(stderr, "An overrun has occured, reseting capture\n");
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn X-RUN"), DLT_UINT32(len));
          }
          else
          {
-            fprintf(stderr, "read from audio interface failed (%s)\n",
-                    snd_strerror(err));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn failed"), DLT_STRING(snd_strerror(err)));
          }
+
          if ((err = snd_pcm_prepare(dev->capture_handle)) < 0)
          {
-            fprintf(stderr, "cannot prepare audio interface for use (%s)\n",
-                    snd_strerror(err));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_readn snd_pcm_prepare failed"), DLT_STRING(snd_strerror(err)));
          }
          if ((err = snd_pcm_start(dev->capture_handle)) < 0)
          {
-            fprintf(stderr, "cannot prepare audio interface for use (%s)\n",
-                    snd_strerror(err));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_readn snd_pcm_start (recover) failed"), DLT_STRING(snd_strerror(err)));
          }
       }
       else
       {
-         fprintf(stderr, "Couldn't read as many samples as I wanted (%d instead of %d)\n", err, len);
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn wrong len (err != len) "), DLT_UINT32(err), DLT_UINT32(len));
       }
    }
    return err;
@@ -359,7 +357,7 @@ snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG, DLT_STRING("alsa_device_writen"));
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_writen"));
 
    if ((err = snd_pcm_writen(dev->playback_handle, ch_buf, len)) != len)
    {
@@ -367,26 +365,22 @@ snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
       {
          if (err == -EPIPE)
          {
-            fprintf(stderr, "An underrun has occured, reseting playback, len=%d\n", len);
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen X-RUN"));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen X-RUN"), DLT_UINT32(len));
          }
          else
          {
-            fprintf(stderr, "write to audio interface failed (%s)\n",
-                    snd_strerror(err));
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen failed"));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen failed"), DLT_STRING(snd_strerror(err)));
          }
+
+         /* try to recover */
          if ((err = snd_pcm_prepare(dev->playback_handle)) < 0)
          {
-            fprintf(stderr, "cannot prepare audio interface for use (%s)\n",
-                    snd_strerror(err));
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen snd_pcm_prepare failed"));
+            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen snd_pcm_prepare failed"), DLT_STRING(snd_strerror(err)));
          }
       }
       else
       {
-         fprintf(stderr, "Couldn't write as many samples as I wanted (%d instead of %d)\n", err, len);
-         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen snd_pcm_prepare failed"), DLT_UINT32(err));
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_writen wrong len (err != len) "), DLT_UINT32(err), DLT_UINT32(len));
       }
    }
    return err;

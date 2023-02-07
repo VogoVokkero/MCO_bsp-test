@@ -37,9 +37,14 @@ This alsa example shall be kept unchanged, as a reference, it features all imple
 
 In our case, we will be looking into:
 - handling clean Start/Pause/Resume/Stop
-- handling clean X(-run/Recover scenarios (which is more or less the same problame than above).
+- handling clean X-run/Recover scenarios (which is more or less the same problame than above).
 
 !!! use option `--audio` to activate the audio loop.
+
+The following commande will loopback audio durig 10s:
+```
+time  /mnt/diag/esg-bsp-test --audio -l 1000
+```
 
 #### reference alsa application
 

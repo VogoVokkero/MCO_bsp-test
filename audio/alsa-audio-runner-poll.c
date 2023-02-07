@@ -75,7 +75,7 @@ static void *audio_runner(void *p_data)
 			}
 			else
 			{
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("poll"));
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("poll"));
 
 				/* Audio available from the soundcard (capture) */
 				r = alsa_device_capture_ready(audio_dev, pfds, nfds);
