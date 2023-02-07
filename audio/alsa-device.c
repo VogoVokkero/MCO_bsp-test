@@ -264,11 +264,16 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
       assert(0);
    }
 
-#if 0
+#define USE_SND_PCM_LINK
+#ifdef USE_SND_PCM_LINK
    if ((err = snd_pcm_link(dev->capture_handle, dev->playback_handle)) < 0)
    {
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_link failed"), DLT_STRING(snd_strerror(err)));
       assert(0);
+   }
+   else
+   {
+       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_link OK"));
    }
 #endif
 
@@ -277,11 +282,14 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_prepare capture_handle"), DLT_STRING(snd_strerror(err)));
       assert(0);
    }
+
+#ifndef USE_SND_PCM_LINK
    if ((err = snd_pcm_prepare(dev->playback_handle)) < 0)
    {
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_prepare play"), DLT_STRING(snd_strerror(err)));
       assert(0);
    }
+#endif
 
    dev->readN = snd_pcm_poll_descriptors_count(dev->capture_handle);
    dev->writeN = snd_pcm_poll_descriptors_count(dev->playback_handle);
@@ -321,7 +329,7 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_readn"));
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("alsa_device_readn"));
 
    if ((err = snd_pcm_readn(dev->capture_handle, ch_buf, len)) != len)
    {
@@ -357,7 +365,7 @@ snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_writen"));
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("alsa_device_writen"));
 
    if ((err = snd_pcm_writen(dev->playback_handle, ch_buf, len)) != len)
    {
@@ -472,7 +480,7 @@ int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int
 
       return pfds[0].revents & POLLIN;
    }
-   // cerr << (revents & POLLERR) << endl;
+
    return revents & POLLIN;
 }
 
@@ -485,17 +493,17 @@ int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned in
 
    if ((err = snd_pcm_poll_descriptors_revents(dev->playback_handle, pfds + dev->readN, dev->writeN, &revents)) < 0)
    {
-      // cerr << "error in snd_pcm_poll_descriptors_revents for playback: " << snd_strerror (err) << endl;
-      // FIXME: This is a kludge
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors_revents P failed"), DLT_STRING(snd_strerror(err)));
       return pfds[1].revents & POLLOUT;
    }
-   // cerr << (revents & POLLERR) << endl;
+
    return revents & POLLOUT;
 }
 
 void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
 {
+   int ret = 0;
+
    DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_startn"));
 
    if (NULL == dev)
@@ -505,13 +513,23 @@ void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
    else
    {
       snd_pcm_sframes_t r = alsa_device_writen(dev, ch_buf, dev->period);
+      if (0 > r)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen pre-roll failed, PERIOD0"));
+      }
 
-      alsa_device_writen(dev, ch_buf, dev->period);
+      r = alsa_device_writen(dev, ch_buf, dev->period);
+      if (0 > r)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen pre-roll failed, PERIOD0"));
+      }
 
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_start"));
-
+#ifndef USE_SND_PCM_LINK
+      /* it seem pcm are already running at this point and start is not needed in link mode.
+       * I assume writen get things rolling. */
       snd_pcm_start(dev->capture_handle);
       snd_pcm_start(dev->playback_handle);
+#endif
    }
 }
 
