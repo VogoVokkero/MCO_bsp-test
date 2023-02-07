@@ -45,6 +45,9 @@ In our case, we will be looking into:
 
 a ref app from the ALSA projet is also built as 'alsa-poll-example'
 
+https://github.com/TomDataworks/whisper_client/blob/master/celt-0.7.0-src/tools/alsa_device.c
+
+
 ## Elite : SPI/TDMA Protocol Stub
 
 Using Elite/SPI protocol, provide an audio frames streaming stub: 

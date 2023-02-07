@@ -18,6 +18,7 @@
  */
 #include "esg-bsp-test.h"
 #include "alsa-audio-runner.h"
+#include "alsa-device.h"
 
 DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
@@ -29,113 +30,9 @@ static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
 
 static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
 
-static pcmAlsa_device_t captureDevice = {0};
-static pcmAlsa_device_t playbackDevice = {0};
-
-static int open_stream(pcmAlsa_device_t *device, int mode)
-{
-	snd_pcm_hw_params_t *hw_params;
-	snd_pcm_sw_params_t *sw_params;
-	int ret;
-
-	if ((ret = snd_pcm_open(&(device->handle), device->name, device->stream_direction, mode)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open audio device "));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_malloc(&hw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot allocate hardware parameter structure"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_any(device->handle, hw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot initialize hardware parameter structure"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_set_access(device->handle, hw_params, AUDIO_TEST_SAMPLE_ACCESS)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set access type"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_set_format(device->handle, hw_params, format)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set sample format"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_set_rate_near(device->handle, hw_params, &rate, NULL)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set sample rate"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_set_channels(device->handle, hw_params, AUDIO_TEST_CHANNELS)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set channel count"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params_set_buffer_size_near(device->handle, hw_params, &buffer_sz_frames)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("set_buffer_time"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_hw_params(device->handle, hw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set parameters"));
-		return ret;
-	}
-
-	snd_pcm_hw_params_free(hw_params);
-
-	if ((ret = snd_pcm_sw_params_malloc(&sw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot allocate software parameters structure"));
-		return ret;
-	}
-	if ((ret = snd_pcm_sw_params_current(device->handle, sw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot initialize software parameters structure"));
-		return ret;
-	}
-	if ((ret = snd_pcm_sw_params_set_avail_min(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set minimum available count"));
-		return ret;
-	}
-
-	if ((ret = snd_pcm_sw_params_set_start_threshold(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set start mode"));
-		return ret;
-	}
-	if ((ret = snd_pcm_sw_params(device->handle, sw_params)) < 0)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set software parameters"));
-		return ret;
-	}
-
-	if ((0 == ret) && (NULL != device) && (NULL != device->handle))
-	{
-		device->fds.count = snd_pcm_poll_descriptors_count(device->handle);
-		device->fds.ufds = malloc(sizeof(struct pollfd) * device->fds.count);
-
-		ret = snd_pcm_poll_descriptors(device->handle, device->fds.ufds, device->fds.count);
-
-		if (0 > ret)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors failed"));
-		}
-	}
-
-	return 0;
-}
+static unsigned int nfds = 0;
+static struct pollfd *pfds = NULL;
+static AlsaDevice *audio_dev = NULL;
 
 static void *audio_runner(void *p_data)
 {
@@ -155,10 +52,14 @@ static void *audio_runner(void *p_data)
 
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
 
-		FD_ZERO(&read_fds);
-		FD_ZERO(&except_fds);
+		alsa_device_startn(audio_dev, ch_bufs);
 
-		FD_SET(captureDevice.fds.ufds->fd, &read_fds);
+		// FD_ZERO(&read_fds);
+		// FD_ZERO(&except_fds);
+
+		// FD_SET(captureDevice.fds.ufds->fd, &read_fds);
+
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("nfds"), DLT_UINT32(nfds));
 
 		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
 		{
@@ -166,57 +67,43 @@ static void *audio_runner(void *p_data)
 			snd_pcm_sframes_t r = 0;
 
 			// Attente passive
-			ret = select(1, &read_fds, NULL, &except_fds, NULL);
-			if (0 > ret)
+			//	ret = select(1, &read_fds, NULL, &except_fds, NULL);
+
+			if (0 > poll(pfds, nfds, -1))
 			{
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("select failed"));
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("poll failed with"), DLT_UINT32(errno));
 			}
 			else
 			{
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("select ready decriptors"), DLT_INT32(ret));
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("poll"));
 
-				if (FD_ISSET(captureDevice.fds.ufds->fd, &read_fds))
+				/* Audio available from the soundcard (capture) */
+				r = alsa_device_capture_ready(audio_dev, pfds, nfds);
+				if (0 < r)
 				{
-					unsigned long *pbuf = (unsigned long *)(buf);
-
-					r = snd_pcm_readn(captureDevice.handle, ch_bufs, avail);
-					if (0 < r)
+					/* Get audio from the soundcard */
+					r = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+					if (0 > r)
 					{
-						if (0 == (nb_loops & 0x1F))
-						{
-
-							DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-									DLT_STRING("snd_pcm_readn"),
-									DLT_UINT32(r),
-									DLT_HEX32(pbuf[0]),
-									DLT_HEX32(pbuf[1 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_HEX32(pbuf[3 * AUDIO_TEST_PERIOD_SZ_FRAMES]),
-									DLT_UINT32(nb_loops));
-						}
-
-						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_read"), DLT_INT32(r));
-
-						/* constant value, to quickly visualize output channel swap */
-						memset(&(pbuf[2 * AUDIO_TEST_PERIOD_SZ_FRAMES]), 0xAA, sizeof(uint32_t) * AUDIO_TEST_PERIOD_SZ_FRAMES);
-
-						r = snd_pcm_writen(playbackDevice.handle, ch_bufs, r);
-
-						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_write"), DLT_INT32(r));
+						ret = -EINVAL;
 					}
 				}
-				else
+
+				/* Ready to play a frame (playback) */
+				r = alsa_device_playback_ready(audio_dev, pfds, nfds);
+				if (0 < r)
 				{
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn failed with"), DLT_INT32(r));
+					/* Playback the audio and reset the echo canceller if we got an underrun */
+					r = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+					if (0 > r)
+					{
+						ret = -EINVAL;
+					}
 				}
 			}
 		}
 
-		snd_pcm_close(playbackDevice.handle);
-		snd_pcm_close(captureDevice.handle);
-
-		free(captureDevice.fds.ufds);
-		free(playbackDevice.fds.ufds);
+		// alsa_device_close(audio_dev);
 	}
 
 	DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("EXIT"), DLT_UINT32(ret));
@@ -230,60 +117,13 @@ int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio, "AUDI", "ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	playbackDevice.name = ALSA_DEVICE;
-	playbackDevice.stream_direction = SND_PCM_STREAM_PLAYBACK;
+	audio_dev = alsa_device_open(ALSA_DEVICE, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES);
 
-	captureDevice.name = ALSA_DEVICE;
-	captureDevice.stream_direction = SND_PCM_STREAM_CAPTURE;
+	/* Setup all file descriptors for poll()ing */
+	nfds = alsa_device_nfds(audio_dev);
+	pfds = malloc(sizeof(*pfds) * (nfds));
 
-	if (NULL == settings)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: invalid settings"));
-		ret = -EINVAL;
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init_poll: Using "), DLT_STRING((AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
-
-		ret = open_stream(&playbackDevice, SND_PCM_NONBLOCK);
-		if (0 > ret)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_PLAYBACK"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = open_stream(&captureDevice, 0)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_CAPTURE"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_prepare(playbackDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_prepare(captureDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare audio interface for use"));
-		}
-	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_start(captureDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start audio interface for use"));
-		}
-	}
+	alsa_device_getfds(audio_dev, pfds, nfds);
 
 	if (EXIT_SUCCESS == ret)
 	{

@@ -105,13 +105,13 @@ static int open_stream(pcmAlsa_device_t *device, int mode)
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot initialize software parameters structure"));
 		return ret;
 	}
-	if ((ret = snd_pcm_sw_params_set_avail_min(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
+	if ((ret = snd_pcm_sw_params_set_avail_min(device->handle, sw_params,AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set minimum available count"));
 		return ret;
 	}
 
-	if ((ret = snd_pcm_sw_params_set_start_threshold(device->handle, sw_params, 0U)) < 0)
+	if ((ret = snd_pcm_sw_params_set_start_threshold(device->handle, sw_params, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 	{
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot set start mode"));
 		return ret;
@@ -154,6 +154,43 @@ static void *audio_runner(void *p_data)
 		uint32_t nb_loops = settings->nb_loops;
 
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
+
+#define USE_SND_PCM_LINK
+#ifdef USE_SND_PCM_LINK
+
+		sleep(10);
+
+		if ((ret = snd_pcm_writen(playbackDevice.handle, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot write linked playbackDevice, PERIOD0"));
+		}
+
+						sleep(10);
+
+		if ((ret = snd_pcm_writen(playbackDevice.handle, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot write linked playbackDevice, PERIOD1"));
+		}
+
+
+						sleep(10);
+
+
+		/* ==== START ==== */
+		if ((ret = snd_pcm_start(playbackDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start linked playbackDevice"));
+		}
+#else
+
+
+
+		/* ==== START ==== */
+		if ((ret = snd_pcm_start(captureDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start captureDevice"));
+		}
+#endif
 
 		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
 		{
@@ -283,7 +320,7 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("audio_init_wait: Using "), DLT_STRING((AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED) ? "non-interleaved" : "interleaved"));
 
 		/* we block waiting capture PCM, don't block with playback PCM */
-		if ((ret = open_stream(&playbackDevice, SND_PCM_NONBLOCK)) < 0)
+		if ((ret = open_stream(&playbackDevice, 0/*SND_PCM_NONBLOCK*/)) < 0)
 		{
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot open_stream SND_PCM_STREAM_PLAYBACK"));
 		}
@@ -306,6 +343,17 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 		}
 	}
 
+#ifdef USE_SND_PCM_LINK /* link for prepare/start, stop */
+	if (EXIT_SUCCESS == ret)
+	{
+		// they share the same clock (Auvitran Toolbax is clock-master)
+		if ((ret = snd_pcm_link(captureDevice.handle, playbackDevice.handle)) < 0)
+		{
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot link capture and playback"));
+		}
+	}
+#endif
+
 	if (EXIT_SUCCESS == ret)
 	{
 		if ((ret = snd_pcm_prepare(playbackDevice.handle)) < 0)
@@ -314,6 +362,7 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 		}
 	}
 
+#ifndef USE_SND_PCM_LINK
 	if (EXIT_SUCCESS == ret)
 	{
 		if ((ret = snd_pcm_prepare(captureDevice.handle)) < 0)
@@ -321,14 +370,7 @@ int audio_init_wait(pthread_t *runner, ebt_settings_t *settings)
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot prepare captureDevice"));
 		}
 	}
-
-	if (EXIT_SUCCESS == ret)
-	{
-		if ((ret = snd_pcm_start(captureDevice.handle)) < 0)
-		{
-			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot start captureDevice"));
-		}
-	}
+#endif
 
 	if (EXIT_SUCCESS == ret)
 	{
