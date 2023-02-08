@@ -155,26 +155,18 @@ static void *audio_runner(void *p_data)
 
 		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
 
-#define USE_SND_PCM_LINK
+//#define USE_SND_PCM_LINK
 #ifdef USE_SND_PCM_LINK
-
-		sleep(10);
 
 		if ((ret = snd_pcm_writen(playbackDevice.handle, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 		{
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot write linked playbackDevice, PERIOD0"));
 		}
 
-						sleep(10);
-
 		if ((ret = snd_pcm_writen(playbackDevice.handle, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES)) < 0)
 		{
 			DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("cannot write linked playbackDevice, PERIOD1"));
 		}
-
-
-						sleep(10);
-
 
 		/* ==== START ==== */
 		if ((ret = snd_pcm_start(playbackDevice.handle)) < 0)

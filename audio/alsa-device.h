@@ -54,7 +54,7 @@ extern "C"
 
    void alsa_device_close(AlsaDevice *dev);
 
-   int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume);
+   int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_buf);
 
    snd_pcm_state_t alsa_device_state(AlsaDevice *dev);
 

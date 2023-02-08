@@ -92,19 +92,21 @@ static void *audio_runner(void *p_data)
 			}
 			else
 			{
-#if 0
 				if (0U != settings->pause_stress)
 				{
-									/* check device state */
-				snd_pcm_state_t state = alsa_device_state(audio_dev);
+					/* check device state */
+					snd_pcm_state_t state = alsa_device_state(audio_dev);
+
+					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("<< alsa_device_state)"), DLT_UINT32(state));
 
 					if (SND_PCM_STATE_SETUP == state)
 					{
-						int paused = alsa_device_pause(audio_dev, 0 /*resume*/);
-						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING(">> alsa_device_pause(0)"), DLT_UINT32(paused));
+						/* resume */
+						int paused = alsa_device_pause(audio_dev, 0 /*pause*/, ch_bufs);
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("<< alsa_device_pause)"), DLT_UINT32(paused));
+					//	continue;
 					}
 				}
-#endif
 
 				/* Audio available from the soundcard (capture) */
 				if (FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds))
@@ -149,10 +151,10 @@ static void *audio_runner(void *p_data)
 			}
 #endif
 
-#if 0
+#if 1
 			if ((0U != settings->pause_stress) && (4U == (nb_loops & 0x7F)))
 			{
-				int paused = alsa_device_pause(audio_dev, 1 /*pause*/);
+				int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING(">> alsa_device_pause(1)"), DLT_UINT32(paused));
 			}
 #endif
