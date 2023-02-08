@@ -37,6 +37,9 @@
 #include <alsa/asoundlib.h>
 #include <sys/poll.h>
 
+#define CAPTURE_FD_INDEX 0U
+#define PLAYBACK_FD_INDEX 1U
+
 #ifdef __cplusplus
 extern "C" {
 #endif

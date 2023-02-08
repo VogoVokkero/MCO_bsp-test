@@ -38,7 +38,6 @@ static void *audio_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
 	ebt_settings_t *settings = (ebt_settings_t *)p_data;
-	fd_set read_fds, write_fds, except_fds;
 
 	if (NULL == settings)
 	{
@@ -50,57 +49,91 @@ static void *audio_runner(void *p_data)
 	{
 		uint32_t nb_loops = settings->nb_loops;
 
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops));
-
 		alsa_device_startn(audio_dev, ch_bufs);
 
-		// FD_ZERO(&read_fds);
-		// FD_ZERO(&except_fds);
+#define SELECT_nPOLL
+#ifdef SELECT_nPOLL
+		fd_set read_fds, write_fds;
 
-		// FD_SET(captureDevice.fds.ufds->fd, &read_fds);
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops), DLT_STRING("(select)"));
+#else
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("START"), DLT_UINT32(nb_loops), DLT_STRING("(poll)"));
+#endif
 
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("nfds"), DLT_UINT32(nfds));
-
-		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
+		while ((0 < nb_loops--) && (0 <= ret))
 		{
 			int avail;
-			snd_pcm_sframes_t r = 0;
 
-			// Attente passive
-			//	ret = select(1, &read_fds, NULL, &except_fds, NULL);
+#ifdef SELECT_nPOLL
 
-			if (0 > poll(pfds, nfds, -1))
+			/* RTFM : masks are modified in place by (shitty) select, hence this must reinit for each loop */
+			FD_ZERO(&read_fds);
+			FD_ZERO(&write_fds);
+			FD_SET(pfds[CAPTURE_FD_INDEX].fd, &read_fds);
+			FD_SET(pfds[PLAYBACK_FD_INDEX].fd, &write_fds);
+
+			ret = select(pfds[PLAYBACK_FD_INDEX].fd + 1 /*highest fd, plus one because 'select' is P.O.S*/,
+						 &read_fds,
+						 &write_fds,
+						 NULL,
+						 NULL);
+
+			/*	DLT_HEX32(read_fds.__fds_bits[0]),
+				DLT_HEX32(write_fds.__fds_bits[0]),*/
+
+			DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("select (#fds/play-is-set/capture-is-set)"),
+					DLT_UINT32(ret),
+					DLT_UINT32(FD_ISSET(pfds[PLAYBACK_FD_INDEX].fd, &write_fds)),
+					DLT_UINT32(FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds)));
+
+			if (0 > ret)
+			{
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("select failed with"), DLT_UINT32(errno));
+			}
+			else
+			{
+				/* Audio available from the soundcard (capture) */
+				if (FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds))
+				{
+					/* Get audio from the soundcard */
+					ret = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+				}
+
+				/* Ready to play a frame (playback) */
+				if (FD_ISSET(pfds[PLAYBACK_FD_INDEX].fd, &write_fds))
+				{
+					/* Playback the audio and reset the echo canceller if we got an underrun */
+					ret = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+				}
+			}
+#else
+			ret = poll(pfds, nfds, -1);
+
+			if (0 > ret)
 			{
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("poll failed with"), DLT_UINT32(errno));
 			}
 			else
 			{
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("poll"));
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("poll (err/ret)"), DLT_UINT32(errno), DLT_UINT32(ret));
 
 				/* Audio available from the soundcard (capture) */
-				r = alsa_device_capture_ready(audio_dev, pfds, nfds);
-				if (0 < r)
+				ret = alsa_device_capture_ready(audio_dev, pfds, nfds);
+				if (0 < ret)
 				{
 					/* Get audio from the soundcard */
-					r = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
-					if (0 > r)
-					{
-						ret = -EINVAL;
-					}
+					ret = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
 				}
 
 				/* Ready to play a frame (playback) */
-				r = alsa_device_playback_ready(audio_dev, pfds, nfds);
-				if (0 < r)
+				ret = alsa_device_playback_ready(audio_dev, pfds, nfds);
+				if (0 < ret)
 				{
 					/* Playback the audio and reset the echo canceller if we got an underrun */
-					r = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
-					if (0 > r)
-					{
-						ret = -EINVAL;
-					}
+					ret = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
 				}
 			}
+#endif
 		}
 
 		// alsa_device_close(audio_dev);

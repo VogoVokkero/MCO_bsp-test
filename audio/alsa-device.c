@@ -481,36 +481,42 @@ int alsa_device_writei(AlsaDevice *dev, const void *buf, int len)
 int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds)
 {
    unsigned short revents = 0;
-   int err;
+   int ret = snd_pcm_poll_descriptors_revents(dev->capture_handle, pfds, dev->readN, &revents);
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG, DLT_STRING("alsa_device_capture_ready"));
-
-   if ((err = snd_pcm_poll_descriptors_revents(dev->capture_handle, pfds, dev->readN, &revents)) < 0)
+   if (0 > ret)
    {
-      // cerr << "error in snd_pcm_poll_descriptors_revents for capture: " << snd_strerror (err) << endl;
-      // FIXME: This is a kludge
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors_revents C failed"), DLT_STRING(snd_strerror(err)));
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors_revents C failed"), DLT_STRING(snd_strerror(ret)));
 
-      return pfds[0].revents & POLLIN;
+      return pfds[CAPTURE_FD_INDEX].revents & POLLIN;
+   }
+   else
+   {
+      ret = !!(revents & POLLIN);
    }
 
-   return revents & POLLIN;
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_capture_ready"), DLT_UINT32(ret));
+
+   return ret;
 }
 
 int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds)
 {
    unsigned short revents = 0;
-   int err;
+   int ret = snd_pcm_poll_descriptors_revents(dev->playback_handle, pfds + dev->readN, dev->writeN, &revents);
 
-   DLT_LOG(dlt_ctxt_audio, DLT_LOG_DEBUG, DLT_STRING("alsa_device_playback_ready"));
-
-   if ((err = snd_pcm_poll_descriptors_revents(dev->playback_handle, pfds + dev->readN, dev->writeN, &revents)) < 0)
+   if (0 > ret)
    {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors_revents P failed"), DLT_STRING(snd_strerror(err)));
-      return pfds[1].revents & POLLOUT;
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_poll_descriptors_revents P failed"), DLT_STRING(snd_strerror(ret)));
+      return pfds[PLAYBACK_FD_INDEX].revents & POLLOUT;
+   }
+   else
+   {
+      ret = !!(revents & POLLOUT);
    }
 
-   return revents & POLLOUT;
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_playback_ready"), DLT_UINT32(ret));
+
+   return ret;
 }
 
 void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
@@ -534,7 +540,7 @@ void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
       r = alsa_device_writen(dev, ch_buf, dev->period);
       if (0 > r)
       {
-         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen pre-roll failed, PERIOD0"));
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen pre-roll failed, PERIOD1"));
       }
 
 #ifndef USE_SND_PCM_LINK
