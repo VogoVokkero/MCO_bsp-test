@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
-	if (0!= args_info.verbose_flag)
+	if (0!= args_info.verbose_given)
 	{
 		g_settings.verbosity = DLT_LOG_VERBOSE;
 	}

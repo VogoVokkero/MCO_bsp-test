@@ -16,11 +16,9 @@ option  "audio"       - "enable audio runner"        flag       off
 option  "tdma"        - "enable tdma x-fer"        flag       off
 option  "uart"        - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
-option  "verbose" - "force VERBOSE mode"        flag       off
 
-#option  "funct-opt"       F "A function option"    optional 
-#    details="\nA function option is basically an option with no argument.\
-#  It can be used, e.g., to specify a specific behavior for a program.
+option  "pause-stress"     p   "test pause/resume robustness"  optional 
+option  "verbose"   v   "force VERBOSE mode"            optional
 
 #Well, this further explanation is quite useless, but it's only to \
 #show an example of an option with details, \
@@ -36,6 +34,6 @@ option  "verbose" - "force VERBOSE mode"        flag       off
 #        int optional hidden
 #option  "dependant"         D 
 #        "option that depends on str-opt" int optional dependon="str-opt"
-text "\nExamples:\n"
-text "\t#>esg-bsp-test --audio --uart -l 10000000 --verbose\n"
+text "\nExample1 :run audio-loopback and uart-parsing : #>esg-bsp-test --audio --uart -l 10000000 --verbose\n"
+text "\nExample2 :run audio-loopback and stress pause/resume : #>esg-bsp-test --audio -p -l 10000000\n"
 text "Good luck."
