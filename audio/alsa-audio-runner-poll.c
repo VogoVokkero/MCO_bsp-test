@@ -92,6 +92,20 @@ static void *audio_runner(void *p_data)
 			}
 			else
 			{
+#if 0
+				if (0U != settings->pause_stress)
+				{
+									/* check device state */
+				snd_pcm_state_t state = alsa_device_state(audio_dev);
+
+					if (SND_PCM_STATE_SETUP == state)
+					{
+						int paused = alsa_device_pause(audio_dev, 0 /*resume*/);
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING(">> alsa_device_pause(0)"), DLT_UINT32(paused));
+					}
+				}
+#endif
+
 				/* Audio available from the soundcard (capture) */
 				if (FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds))
 				{
@@ -134,6 +148,14 @@ static void *audio_runner(void *p_data)
 				}
 			}
 #endif
+
+#if 0
+			if ((0U != settings->pause_stress) && (4U == (nb_loops & 0x7F)))
+			{
+				int paused = alsa_device_pause(audio_dev, 1 /*pause*/);
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING(">> alsa_device_pause(1)"), DLT_UINT32(paused));
+			}
+#endif
 		}
 
 		// alsa_device_close(audio_dev);
@@ -150,7 +172,7 @@ int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio, "AUDI", "ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	audio_dev = alsa_device_open(ALSA_DEVICE, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES);
+	audio_dev = alsa_device_open(ALSA_DEVICE, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES, settings);
 
 	/* Setup all file descriptors for poll()ing */
 	nfds = alsa_device_nfds(audio_dev);

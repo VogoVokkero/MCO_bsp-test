@@ -2,7 +2,7 @@
    Copyright (C) 2004-2006 Jean-Marc Valin
    Copyright (C) 2006 Commonwealth Scientific and Industrial Research
                       Organisation (CSIRO) Australia
-   
+
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
    met:
@@ -28,12 +28,13 @@
    STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
    ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
    POSSIBILITY OF SUCH DAMAGE.
- 
+
 */
 
 #ifndef ALSA_DEVICE_H
 #define ALSA_DEVICE_H
 
+#include "esg-bsp-test.h"
 #include <alsa/asoundlib.h>
 #include <sys/poll.h>
 
@@ -41,34 +42,39 @@
 #define PLAYBACK_FD_INDEX 1U
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-struct AlsaDevice_;
+   struct AlsaDevice_;
 
-typedef struct AlsaDevice_ AlsaDevice;
+   typedef struct AlsaDevice_ AlsaDevice;
 
-AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period);
+   AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period, ebt_settings_t *settings);
 
-void alsa_device_close(AlsaDevice *dev);
+   void alsa_device_close(AlsaDevice *dev);
 
-int alsa_device_readi(AlsaDevice *dev, void *buf, int len);
+   int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume);
 
-int alsa_device_writei(AlsaDevice *dev, const void *buf, int len);
+   snd_pcm_state_t alsa_device_state(AlsaDevice *dev);
 
-snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len);
+   int alsa_device_readi(AlsaDevice *dev, void *buf, int len);
 
-snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len);
+   int alsa_device_writei(AlsaDevice *dev, const void *buf, int len);
 
-int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len);
 
-int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len);
 
-void alsa_device_startn(AlsaDevice *dev, void **ch_buf);
+   int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
 
-int alsa_device_nfds(AlsaDevice *dev);
+   int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
 
-void alsa_device_getfds(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   void alsa_device_startn(AlsaDevice *dev, void **ch_buf);
+
+   int alsa_device_nfds(AlsaDevice *dev);
+
+   void alsa_device_getfds(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
 
 #ifdef __cplusplus
 }

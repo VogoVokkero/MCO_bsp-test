@@ -33,7 +33,6 @@
 #include "alsa-device.h"
 #include <stdlib.h>
 
-#include "esg-bsp-test.h"
 DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
 struct AlsaDevice_
@@ -47,7 +46,7 @@ struct AlsaDevice_
    struct pollfd *read_fd, *write_fd;
 };
 
-AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period)
+AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period, ebt_settings_t *settings)
 {
    int dir;
    int err;
@@ -56,6 +55,7 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
    snd_pcm_uframes_t period_size = period;
    snd_pcm_uframes_t buffer_size = AUDIO_TEST_PERIODS * period;
    static snd_output_t *jcd_out;
+
    AlsaDevice *dev = malloc(sizeof(*dev));
    if (!dev)
       return NULL;
@@ -65,6 +65,7 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
       free(dev);
       return NULL;
    }
+
    strcpy(dev->device_name, device_name);
    dev->channels = channels;
    dev->period = period;
@@ -140,6 +141,12 @@ AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels,
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params capture"), DLT_STRING(snd_strerror(err)));
       assert(0);
    }
+
+   if ((0 != settings->pause_stress) && (NULL != hw_params) && (0 == snd_pcm_hw_params_can_pause(hw_params)))
+   {
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("snd_pcm_hw_params_can_pause : hardware does not support pause"), DLT_STRING(snd_strerror(err)));
+   }
+
    /*snd_pcm_dump_setup(dev->capture_handle, jcd_out);*/
    snd_pcm_hw_params_free(hw_params);
 
@@ -360,15 +367,15 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
    }
    else
    {
-      if (abs(((int32_t*)ch_buf[0])[0]) < 0x00002000U)
+      if (abs(((int32_t *)ch_buf[0])[0]) < 0x00002000U)
       {
          DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO,
-                 DLT_STRING("XRUN ? snd_pcm_readn"),
+                 DLT_STRING("IN1 level too low ? snd_pcm_readn"),
                  DLT_STRING(snd_strerror(err)),
-                 DLT_HEX32(((uint32_t*)ch_buf[0])[0]),
-                 DLT_HEX32(((uint32_t*)ch_buf[1])[0]),
-                 DLT_HEX32(((uint32_t*)ch_buf[2])[0]),
-                 DLT_HEX32(((uint32_t*)ch_buf[3])[0]));
+                 DLT_HEX32(((uint32_t *)ch_buf[0])[0]),
+                 DLT_HEX32(((uint32_t *)ch_buf[1])[0]),
+                 DLT_HEX32(((uint32_t *)ch_buf[2])[0]),
+                 DLT_HEX32(((uint32_t *)ch_buf[3])[0]));
       }
    }
    return err;
@@ -550,6 +557,49 @@ void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
       snd_pcm_start(dev->playback_handle);
 #endif
    }
+}
+
+snd_pcm_state_t alsa_device_state(AlsaDevice *dev)
+{
+
+   snd_pcm_state_t state = snd_pcm_state(dev->playback_handle);
+
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("playback PCM state"), DLT_UINT32(state));
+
+   return state;
+}
+
+int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume)
+{
+   int ret = 0;
+   if (NULL != dev)
+   {
+#ifdef SUPPORTS_PAUSE
+      ret = snd_pcm_pause(dev->capture_handle, pause_nResume);
+#ifndef USE_SND_PCM_LINK
+      snd_pcm_pause(dev->playback_handle, pause_nResume);
+#endif
+#else
+      if (pause_nResume)
+      {
+         ret = snd_pcm_drain(dev->playback_handle);
+#ifndef USE_SND_PCM_LINK
+         snd_pcm_drain(dev->capture_handle);
+#endif
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_drain"), DLT_STRING(snd_strerror(ret)));
+      }
+      else
+      {
+         ret = snd_pcm_start(dev->capture_handle);
+#ifndef USE_SND_PCM_LINK
+         snd_pcm_start(dev->playback_handle);
+#endif
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_start"), DLT_STRING(snd_strerror(ret)));
+      }
+#endif
+   }
+
+   return ret;
 }
 
 int alsa_device_nfds(AlsaDevice *dev)
