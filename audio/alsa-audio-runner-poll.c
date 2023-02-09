@@ -97,13 +97,11 @@ static void *audio_runner(void *p_data)
 					/* check device state */
 					snd_pcm_state_t state = alsa_device_state(audio_dev);
 
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("<< alsa_device_state)"), DLT_UINT32(state));
-
 					if (SND_PCM_STATE_SETUP == state)
 					{
 						/* resume */
-						int paused = alsa_device_pause(audio_dev, 0 /*pause*/, ch_bufs);
-						DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("<< alsa_device_pause)"), DLT_UINT32(paused));
+						int paused = alsa_device_pause(audio_dev, 0 /*resume*/, ch_bufs);
+						DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("|>"), DLT_UINT32(paused));
 					//	continue;
 					}
 				}
@@ -151,13 +149,11 @@ static void *audio_runner(void *p_data)
 			}
 #endif
 
-#if 1
 			if ((0U != settings->pause_stress) && (4U == (nb_loops & 0x7F)))
 			{
 				int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING(">> alsa_device_pause(1)"), DLT_UINT32(paused));
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("||"), DLT_UINT32(paused));
 			}
-#endif
 		}
 
 		// alsa_device_close(audio_dev);
