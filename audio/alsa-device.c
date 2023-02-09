@@ -328,15 +328,8 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
    {
       if (err < 0)
       {
-         if (err == -EPIPE)
-         {
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn X-RUN"), DLT_UINT32(len));
-         }
-         else
-         {
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn failed"), DLT_STRING(snd_strerror(err)));
-         }
-
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_readn failed"), DLT_STRING(snd_strerror(err)));
+#if 0
          if ((err = snd_pcm_prepare(dev->capture_handle)) < 0)
          {
             DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_readn snd_pcm_prepare failed"), DLT_STRING(snd_strerror(err)));
@@ -345,6 +338,9 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
          {
             DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_readn snd_pcm_start (recover) failed"), DLT_STRING(snd_strerror(err)));
          }
+#else
+         err = snd_pcm_recover(dev->capture_handle, err, 1);
+#endif
       }
       else
       {
@@ -377,20 +373,17 @@ snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
    {
       if (err < 0)
       {
-         if (err == -EPIPE)
-         {
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen X-RUN"), DLT_UINT32(len));
-         }
-         else
-         {
-            DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen failed"), DLT_STRING(snd_strerror(err)));
-         }
-
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen failed"), DLT_STRING(snd_strerror(err)));
+#if 0
          /* try to recover */
          if ((err = snd_pcm_prepare(dev->playback_handle)) < 0)
          {
             DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen snd_pcm_prepare failed"), DLT_STRING(snd_strerror(err)));
          }
+
+#else
+         err = snd_pcm_recover(dev->capture_handle, err, 1);
+#endif
       }
       else
       {
@@ -570,13 +563,13 @@ int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_bu
    {
       if (pause_nResume)
       {
-         snd_pcm_prepare(dev->playback_handle);
-         ret = snd_pcm_drain(dev->playback_handle);
-#ifndef USE_SND_PCM_LINK
          snd_pcm_prepare(dev->capture_handle);
-         snd_pcm_drain(dev->capture_handle);
+         ret = snd_pcm_drain(dev->capture_handle);
+#ifndef USE_SND_PCM_LINK
+         snd_pcm_prepare(dev->playback_handle);
+         snd_pcm_drain(dev->playback_handle);
 #endif
-         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_drop"), DLT_STRING(snd_strerror(ret)));    
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_drop"), DLT_STRING(snd_strerror(ret)));
       }
       else
       {
@@ -586,6 +579,19 @@ int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_bu
    }
 
    return ret;
+}
+
+void alsa_device_recover(AlsaDevice *dev, void **ch_buf, int err)
+{
+#if 0
+   snd_pcm_prepare(dev->playback_handle);
+
+   snd_pcm_writen(dev->playback_handle, ch_buf, AUDIO_TEST_PERIOD_SZ_FRAMES);
+
+   snd_pcm_start(dev->playback_handle);
+#else
+   snd_pcm_recover(dev->playback_handle, -ESTRPIPE, 1);
+#endif
 }
 
 int alsa_device_nfds(AlsaDevice *dev)

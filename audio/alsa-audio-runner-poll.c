@@ -102,7 +102,9 @@ static void *audio_runner(void *p_data)
 						/* resume */
 						int paused = alsa_device_pause(audio_dev, 0 /*resume*/, ch_bufs);
 						DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("|>"), DLT_UINT32(paused));
-					//	continue;
+
+					//	alsa_device_recover(audio_dev, ch_bufs, -ESTRPIPE);
+					//	continue; /* go back polling */
 					}
 				}
 
