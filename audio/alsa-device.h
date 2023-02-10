@@ -50,13 +50,19 @@ extern "C"
    {
       //  int channels;
       int period;
-      snd_pcm_t *capture_handle;
-      snd_pcm_t *playback_handle;
-      int readN, writeN;
-      struct pollfd *read_fd, *write_fd;
+      snd_pcm_t *pcm_handle;
+      int nb_poll_fd;
+      struct pollfd *poll_fd;
+
+      snd_pcm_stream_t direction;
+
    } AlsaDevice_t;
 
-   AlsaDevice_t *alsa_device_open(ebt_settings_t *settings);
+   /* init and setup */
+   AlsaDevice_t *alsa_device_open_play(ebt_settings_t *settings);
+   AlsaDevice_t *alsa_device_open_rec(ebt_settings_t *settings);
+
+   int alsa_device_link(AlsaDevice_t *play_dev, AlsaDevice_t *rec_dev);
 
    void alsa_device_close(AlsaDevice_t *dev);
 
@@ -66,23 +72,15 @@ extern "C"
 
    snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev);
 
-   int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len);
+   snd_pcm_sframes_t alsa_device_readn(AlsaDevice_t *dev, void **ch_buf,  const snd_pcm_uframes_t frames);
 
-   int alsa_device_writei(AlsaDevice_t *dev, const void *buf, int len);
+   snd_pcm_sframes_t alsa_device_writen(AlsaDevice_t *dev, void **ch_buf,  const snd_pcm_uframes_t frames);
 
-   snd_pcm_sframes_t alsa_device_readn(AlsaDevice_t *dev, void **ch_buf, int len);
-
-   snd_pcm_sframes_t alsa_device_writen(AlsaDevice_t *dev, void **ch_buf, int len);
-
-   int alsa_device_capture_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
-
-   int alsa_device_playback_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
+   int alsa_device_ready(AlsaDevice_t *dev);
 
    void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf);
 
-   int alsa_device_nfds(AlsaDevice_t *dev);
 
-   void alsa_device_getfds(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
 
 #ifdef __cplusplus
 }
