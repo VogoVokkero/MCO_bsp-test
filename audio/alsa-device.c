@@ -37,7 +37,6 @@ DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
 struct AlsaDevice_
 {
-   char *device_name;
    int channels;
    int period;
    snd_pcm_t *capture_handle;
@@ -46,229 +45,188 @@ struct AlsaDevice_
    struct pollfd *read_fd, *write_fd;
 };
 
-AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period, ebt_settings_t *settings)
+static int alsa_device_hw_params(snd_pcm_t *pcm_handle, ebt_settings_t *settings)
 {
-   int dir;
-   int err;
+   int err = ((NULL != pcm_handle) && (NULL != settings)) ? 0 : -EINVAL;
+
    snd_pcm_hw_params_t *hw_params;
+   snd_pcm_hw_params_alloca(&hw_params);
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_any(pcm_handle, hw_params);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_any capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_set_access(pcm_handle, hw_params, AUDIO_TEST_SAMPLE_ACCESS);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_access capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_set_format(pcm_handle, hw_params, AUDIO_TEST_SAMPLE_FORMAT);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_format capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      uint32_t rate = AUDIO_TEST_RATE;
+      err = snd_pcm_hw_params_set_rate_near(pcm_handle, hw_params, &rate, 0);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_rate_near capture"), DLT_UINT32(rate), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_set_channels(pcm_handle, hw_params, AUDIO_TEST_CHANNELS);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_channels capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_set_period_size(pcm_handle, hw_params, AUDIO_TEST_PERIOD_SZ_FRAMES, 0);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_period_size constraint failed"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params_set_periods(pcm_handle, hw_params, AUDIO_TEST_PERIODS, 0);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_period_size_near capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      snd_pcm_uframes_t buffer_size = AUDIO_TEST_PERIODS * AUDIO_TEST_PERIOD_SZ_FRAMES;
+
+      err = snd_pcm_hw_params_set_buffer_size_near(pcm_handle, hw_params, &buffer_size);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_buffer_size_near capture"), DLT_UINT32(buffer_size), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_hw_params(pcm_handle, hw_params);
+      if (0 > err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if ((0 != settings->pause_stress) && (0 == snd_pcm_hw_params_can_pause(hw_params)))
+   {
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("snd_pcm_hw_params_can_pause : hardware does not support pause"), DLT_STRING(snd_strerror(err)));
+   }
+
+   return err;
+}
+
+static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_min, ebt_settings_t *settings)
+{
+   int err = ((NULL != pcm_handle) && (NULL != settings)) ? 0 : -EINVAL;
+
    snd_pcm_sw_params_t *sw_params;
-   snd_pcm_uframes_t period_size = period;
-   snd_pcm_uframes_t buffer_size = AUDIO_TEST_PERIODS * period;
+   snd_pcm_sw_params_alloca(&sw_params);
+
+   if (0 <= err)
+   {
+      err = snd_pcm_sw_params_current(pcm_handle, sw_params);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_current capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if ((0 <= err) && (0 != avail_min))
+   {
+      err = snd_pcm_sw_params_set_avail_min(pcm_handle, sw_params, avail_min);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_avail_min capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_sw_params(pcm_handle, sw_params);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params capture"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   return err;
+}
+
+//= alsa_device_open(AUDIO_TEST_DEVICE_NAME, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES, settings);
+
+AlsaDevice *alsa_device_open(ebt_settings_t *settings)
+{
+   int err = (NULL != settings) ? 0 : -EINVAL;
    static snd_output_t *jcd_out;
 
    AlsaDevice *dev = malloc(sizeof(*dev));
    if (!dev)
       return NULL;
-   dev->device_name = malloc(1 + strlen(device_name));
-   if (!dev->device_name)
-   {
-      free(dev);
-      return NULL;
-   }
 
-   strcpy(dev->device_name, device_name);
-   dev->channels = channels;
-   dev->period = period;
-   err = snd_output_stdio_attach(&jcd_out, stdout, 0);
+   dev->channels = AUDIO_TEST_CHANNELS;
+   dev->period = AUDIO_TEST_PERIOD_SZ_FRAMES;
 
-   if ((err = snd_pcm_open(&dev->capture_handle, dev->device_name, SND_PCM_STREAM_CAPTURE, 0)) < 0)
+   snd_output_stdio_attach(&jcd_out, stdout, 0);
+
+   if ((err = snd_pcm_open(&dev->capture_handle, AUDIO_TEST_DEVICE_NAME, SND_PCM_STREAM_CAPTURE, 0)) < 0)
    {
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_open capture"), DLT_STRING(snd_strerror(err)));
       assert(0);
    }
 
-   if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0)
+   if (0 <= err)
    {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_malloc capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
+      err = alsa_device_hw_params(dev->capture_handle, settings);
    }
 
-   if ((err = snd_pcm_hw_params_any(dev->capture_handle, hw_params)) < 0)
+   if (0 <= err)
    {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_any capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
+      err = alsa_device_sw_params(dev->capture_handle, 0, settings);
    }
 
-   if ((err = snd_pcm_hw_params_set_access(dev->capture_handle, hw_params, AUDIO_TEST_SAMPLE_ACCESS)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_access capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_format(dev->capture_handle, hw_params, AUDIO_TEST_SAMPLE_FORMAT)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_format capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_rate_near(dev->capture_handle, hw_params, &rate, 0)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_rate_near capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   /*fprintf (stderr, "rate = %d\n", rate);*/
-
-   if ((err = snd_pcm_hw_params_set_channels(dev->capture_handle, hw_params, channels)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_channels capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   period_size = period;
-   dir = 0;
-   if ((err = snd_pcm_hw_params_set_period_size_near(dev->capture_handle, hw_params, &period_size, &dir)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_period_size_near capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_periods(dev->capture_handle, hw_params, AUDIO_TEST_PERIODS, 0)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_period_size_near capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   buffer_size = AUDIO_TEST_PERIODS * period_size;
-   dir = 0;
-   if ((err = snd_pcm_hw_params_set_buffer_size_near(dev->capture_handle, hw_params, &buffer_size)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_buffer_size_near capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params(dev->capture_handle, hw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((0 != settings->pause_stress) && (NULL != hw_params) && (0 == snd_pcm_hw_params_can_pause(hw_params)))
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("snd_pcm_hw_params_can_pause : hardware does not support pause"), DLT_STRING(snd_strerror(err)));
-   }
-
-   /*snd_pcm_dump_setup(dev->capture_handle, jcd_out);*/
-   snd_pcm_hw_params_free(hw_params);
-
-   if ((err = snd_pcm_sw_params_malloc(&sw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_malloc capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params_current(dev->capture_handle, sw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_current capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params_set_avail_min(dev->capture_handle, sw_params, period)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_avail_min capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params(dev->capture_handle, sw_params)) < 0)
-   {
-      fprintf(stderr, "cannot set software parameters (%s)\n",
-              snd_strerror(err));
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params capture"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_open(&dev->playback_handle, dev->device_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+   if ((err = snd_pcm_open(&dev->playback_handle, AUDIO_TEST_DEVICE_NAME, SND_PCM_STREAM_PLAYBACK, 0)) < 0)
    {
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_open play"), DLT_STRING(snd_strerror(err)));
       assert(0);
    }
 
-   if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0)
+   if (0 <= err)
    {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_malloc play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
+      err = alsa_device_hw_params(dev->playback_handle, settings);
    }
 
-   if ((err = snd_pcm_hw_params_any(dev->playback_handle, hw_params)) < 0)
+   if (0 <= err)
    {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_any play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_access(dev->playback_handle, hw_params, AUDIO_TEST_SAMPLE_ACCESS)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_access play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_format(dev->playback_handle, hw_params, AUDIO_TEST_SAMPLE_FORMAT)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_format play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params_set_rate_near(dev->playback_handle, hw_params, &rate, 0)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_rate_near play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   /*fprintf (stderr, "rate = %d\n", rate);*/
-
-   if ((err = snd_pcm_hw_params_set_channels(dev->playback_handle, hw_params, channels)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_channels play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   period_size = period;
-   dir = 0;
-   if ((err = snd_pcm_hw_params_set_period_size_near(dev->playback_handle, hw_params, &period_size, &dir)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_period_size_near play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_hw_params_set_periods(dev->playback_handle, hw_params, AUDIO_TEST_PERIODS, 0)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_periods play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   buffer_size = period_size * 2;
-   dir = 0;
-   if ((err = snd_pcm_hw_params_set_buffer_size_near(dev->playback_handle, hw_params, &buffer_size)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params_set_buffer_size_near play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   if ((err = snd_pcm_hw_params(dev->playback_handle, hw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_hw_params play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-
-   /*snd_pcm_dump_setup(dev->playback_handle, jcd_out);*/
-   snd_pcm_hw_params_free(hw_params);
-
-   if ((err = snd_pcm_sw_params_malloc(&sw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_malloc play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params_current(dev->playback_handle, sw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_current play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params_set_avail_min(dev->playback_handle, sw_params, period)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_avail_min play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params_set_start_threshold(dev->playback_handle, sw_params, period)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_start_threshold play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
-   }
-   if ((err = snd_pcm_sw_params(dev->playback_handle, sw_params)) < 0)
-   {
-      DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params play"), DLT_STRING(snd_strerror(err)));
-      assert(0);
+      err = alsa_device_sw_params(dev->playback_handle, /* avail min*/ AUDIO_TEST_PERIOD_SZ_FRAMES, settings);
    }
 
 #define USE_SND_PCM_LINK
@@ -314,7 +272,6 @@ void alsa_device_close(AlsaDevice *dev)
 
    snd_pcm_close(dev->capture_handle);
    snd_pcm_close(dev->playback_handle);
-   free(dev->device_name);
    free(dev);
 }
 

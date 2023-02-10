@@ -17,7 +17,7 @@
 //static char *device = "plughw:0,0";         /* playback device */
 //static char *device = "hw:0,0";         /* playback device */
 
-static char *device = ALSA_DEVICE;
+static char *device = AUDIO_TEST_DEVICE_NAME;
 
 static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;    /* sample format */
 static unsigned int rate = AUDIO_TEST_RATE;           /* stream rate */

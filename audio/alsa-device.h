@@ -50,7 +50,7 @@ extern "C"
 
    typedef struct AlsaDevice_ AlsaDevice;
 
-   AlsaDevice *alsa_device_open(char *device_name, unsigned int rate, int channels, int period, ebt_settings_t *settings);
+   AlsaDevice *alsa_device_open(ebt_settings_t *settings);
 
    void alsa_device_close(AlsaDevice *dev);
 

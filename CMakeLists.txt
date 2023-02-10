@@ -15,7 +15,6 @@ include(GNUInstallDirs)
 add_executable(esg-bsp-test
     main.c
     options/cmdline.c
-    audio/alsa-audio-runner-wait.c
     audio/alsa-audio-runner-poll.c
     audio/alsa-device.c
     uart/elite-uart-runner.c

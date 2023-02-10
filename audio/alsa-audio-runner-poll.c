@@ -25,7 +25,6 @@ DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 static uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
 static void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
-static unsigned int rate = AUDIO_TEST_RATE;
 static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
 
 static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
@@ -172,7 +171,7 @@ int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio, "AUDI", "ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	audio_dev = alsa_device_open(ALSA_DEVICE, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES, settings);
+	audio_dev = alsa_device_open(settings);
 
 	/* Setup all file descriptors for poll()ing */
 	nfds = alsa_device_nfds(audio_dev);
