@@ -37,11 +37,11 @@ const char *gengetopt_args_info_help[] = {
   "  -h, --help            Print help and exit",
   "  -V, --version         Print version and exit",
   "  -l, --loops=INT       Number or cycles for each running.this is roughly the\n                          number of 20ms audio periods to process, or 10ms SPI\n                          messages\n                            (default=`1000')",
+  "  -p, --pauses=INT      Number or pauses (stop, restart) to simulate.\n                            (default=`0')",
   "      --audio           enable audio runner  (default=off)",
   "      --tdma            enable tdma x-fer  (default=off)",
   "      --uart            enable uart x-fer  (default=off)",
   "      --gpio-test-only  just check select() on gpio47  (default=off)",
-  "  -p, --pause-stress    test pause/resume robustness",
   "  -v, --verbose         force VERBOSE mode",
   "\nExample1 :run audio-loopback and uart-parsing : #>esg-bsp-test --audio --uart\n-l 10000000 --verbose\n\nExample2 :run audio-loopback and stress pause/resume : #>esg-bsp-test --audio\n-p -l 10000000\nGood luck.",
     0
@@ -95,11 +95,11 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->help_given = 0 ;
   args_info->version_given = 0 ;
   args_info->loops_given = 0 ;
+  args_info->pauses_given = 0 ;
   args_info->audio_given = 0 ;
   args_info->tdma_given = 0 ;
   args_info->uart_given = 0 ;
   args_info->gpio_test_only_given = 0 ;
-  args_info->pause_stress_given = 0 ;
   args_info->verbose_given = 0 ;
 }
 
@@ -109,6 +109,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   FIX_UNUSED (args_info);
   args_info->loops_arg = 1000;
   args_info->loops_orig = NULL;
+  args_info->pauses_arg = 0;
+  args_info->pauses_orig = NULL;
   args_info->audio_flag = 0;
   args_info->tdma_flag = 0;
   args_info->uart_flag = 0;
@@ -124,11 +126,11 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->help_help = gengetopt_args_info_help[0] ;
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->loops_help = gengetopt_args_info_help[2] ;
-  args_info->audio_help = gengetopt_args_info_help[3] ;
-  args_info->tdma_help = gengetopt_args_info_help[4] ;
-  args_info->uart_help = gengetopt_args_info_help[5] ;
-  args_info->gpio_test_only_help = gengetopt_args_info_help[6] ;
-  args_info->pause_stress_help = gengetopt_args_info_help[7] ;
+  args_info->pauses_help = gengetopt_args_info_help[3] ;
+  args_info->audio_help = gengetopt_args_info_help[4] ;
+  args_info->tdma_help = gengetopt_args_info_help[5] ;
+  args_info->uart_help = gengetopt_args_info_help[6] ;
+  args_info->gpio_test_only_help = gengetopt_args_info_help[7] ;
   args_info->verbose_help = gengetopt_args_info_help[8] ;
   
 }
@@ -220,6 +222,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 {
 
   free_string_field (&(args_info->loops_orig));
+  free_string_field (&(args_info->pauses_orig));
   
   
 
@@ -256,6 +259,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "version", 0, 0 );
   if (args_info->loops_given)
     write_into_file(outfile, "loops", args_info->loops_orig, 0);
+  if (args_info->pauses_given)
+    write_into_file(outfile, "pauses", args_info->pauses_orig, 0);
   if (args_info->audio_given)
     write_into_file(outfile, "audio", 0, 0 );
   if (args_info->tdma_given)
@@ -264,8 +269,6 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "uart", 0, 0 );
   if (args_info->gpio_test_only_given)
     write_into_file(outfile, "gpio-test-only", 0, 0 );
-  if (args_info->pause_stress_given)
-    write_into_file(outfile, "pause-stress", 0, 0 );
   if (args_info->verbose_given)
     write_into_file(outfile, "verbose", 0, 0 );
   
@@ -522,16 +525,16 @@ cmdline_parser_internal (
         { "help",	0, NULL, 'h' },
         { "version",	0, NULL, 'V' },
         { "loops",	1, NULL, 'l' },
+        { "pauses",	1, NULL, 'p' },
         { "audio",	0, NULL, 0 },
         { "tdma",	0, NULL, 0 },
         { "uart",	0, NULL, 0 },
         { "gpio-test-only",	0, NULL, 0 },
-        { "pause-stress",	0, NULL, 'p' },
         { "verbose",	0, NULL, 'v' },
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVl:pv", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVl:p:v", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -560,14 +563,15 @@ cmdline_parser_internal (
             goto failure;
         
           break;
-        case 'p':	/* test pause/resume robustness.  */
+        case 'p':	/* Number or pauses (stop, restart) to simulate.
+.  */
         
         
-          if (update_arg( 0 , 
-               0 , &(args_info->pause_stress_given),
-              &(local_args_info.pause_stress_given), optarg, 0, 0, ARG_NO,
+          if (update_arg( (void *)&(args_info->pauses_arg), 
+               &(args_info->pauses_orig), &(args_info->pauses_given),
+              &(local_args_info.pauses_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
-              "pause-stress", 'p',
+              "pauses", 'p',
               additional_error))
             goto failure;
         

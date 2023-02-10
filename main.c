@@ -46,13 +46,17 @@ int main(int argc, char **argv)
 	}
 
 	g_settings.nb_loops = args_info.loops_arg;
-	g_settings.pause_stress = args_info.pause_stress_given;
+	g_settings.pauses = args_info.pauses_arg;
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst, "BTST", "BSP Test suite", g_settings.verbosity, DLT_TRACE_STATUS_DEFAULT);
 
-	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("Using loops:"), DLT_UINT32(g_settings.nb_loops));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio enabled:"), DLT_INT32(args_info.audio_flag));
-	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio pause stress:"), DLT_INT32(args_info.pause_stress_given));
+	if (0 != args_info.audio_flag)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio : loops:"), DLT_UINT32(g_settings.nb_loops));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio : pauses:"), DLT_INT32(args_info.pauses_arg));
+	}
+
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(args_info.tdma_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(args_info.uart_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("gpio poll test only:"), DLT_INT32(args_info.gpio_test_only_flag));

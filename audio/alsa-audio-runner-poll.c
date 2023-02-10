@@ -25,10 +25,6 @@ DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 static uint8_t buf[AUDIO_TEST_BUFFER_SZ_BYTES];
 static void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
-static snd_pcm_format_t format = AUDIO_TEST_SAMPLE_FORMAT;
-
-static unsigned long int buffer_sz_frames = AUDIO_TEST_BUFFER_SZ_FRAMES;
-
 static unsigned int nfds = 0;
 static struct pollfd *pfds = NULL;
 static AlsaDevice *audio_dev = NULL;
@@ -36,6 +32,7 @@ static AlsaDevice *audio_dev = NULL;
 static void *audio_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
+
 	ebt_settings_t *settings = (ebt_settings_t *)p_data;
 
 	if (NULL == settings)
@@ -91,20 +88,14 @@ static void *audio_runner(void *p_data)
 			}
 			else
 			{
-				if (0U != settings->pause_stress)
+				/* check device state */
+				snd_pcm_state_t state = alsa_device_state(audio_dev);
+
+				if (SND_PCM_STATE_SETUP == state)
 				{
-					/* check device state */
-					snd_pcm_state_t state = alsa_device_state(audio_dev);
-
-					if (SND_PCM_STATE_SETUP == state)
-					{
-						/* resume */
-						int paused = alsa_device_pause(audio_dev, 0 /*resume*/, ch_bufs);
-						DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("|>"), DLT_UINT32(paused));
-
-					//	alsa_device_recover(audio_dev, ch_bufs, -ESTRPIPE);
-					//	continue; /* go back polling */
-					}
+					/* resume */
+					//	int paused = alsa_device_pause(audio_dev, 0 /*resume*/, ch_bufs);
+					DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("|>"));
 				}
 
 				/* Audio available from the soundcard (capture) */
@@ -150,10 +141,12 @@ static void *audio_runner(void *p_data)
 			}
 #endif
 
-			if ((0U != settings->pause_stress) && (4U == (nb_loops & 0x7F)))
+			if ((0U < settings->pauses) && (4U == (nb_loops & 0x7F)))
 			{
 				int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("||"), DLT_UINT32(paused));
+
+				settings->pauses--;
 			}
 		}
 
@@ -167,17 +160,27 @@ static void *audio_runner(void *p_data)
 
 int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 {
-	int ret = EXIT_SUCCESS;
+	int ret = (NULL != settings) ? EXIT_SUCCESS : -EINVAL;
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_audio, "AUDI", "ESG BSP Audio Context", DLT_LOG_INFO, DLT_TRACE_STATUS_DEFAULT);
 
-	audio_dev = alsa_device_open(settings);
+	if (EXIT_SUCCESS == ret)
+	{
+		audio_dev = alsa_device_open(settings);
+		if (NULL == audio_dev)
+		{
+			ret = -EINVAL;
+		}
+	}
 
-	/* Setup all file descriptors for poll()ing */
-	nfds = alsa_device_nfds(audio_dev);
-	pfds = malloc(sizeof(*pfds) * (nfds));
+	if (EXIT_SUCCESS == ret)
+	{
+		/* Setup all file descriptors for poll()ing */
+		nfds = alsa_device_nfds(audio_dev);
+		pfds = malloc(sizeof(*pfds) * (nfds));
 
-	alsa_device_getfds(audio_dev, pfds, nfds);
+		alsa_device_getfds(audio_dev, pfds, nfds);
+	}
 
 	if (EXIT_SUCCESS == ret)
 	{

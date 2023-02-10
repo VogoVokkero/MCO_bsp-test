@@ -37,7 +37,7 @@ DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
 struct AlsaDevice_
 {
-   int channels;
+ //  int channels;
    int period;
    snd_pcm_t *capture_handle;
    snd_pcm_t *playback_handle;
@@ -136,7 +136,7 @@ static int alsa_device_hw_params(snd_pcm_t *pcm_handle, ebt_settings_t *settings
       }
    }
 
-   if ((0 != settings->pause_stress) && (0 == snd_pcm_hw_params_can_pause(hw_params)))
+   if ((0U < settings->pauses) && (0 == snd_pcm_hw_params_can_pause(hw_params)))
    {
       DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("snd_pcm_hw_params_can_pause : hardware does not support pause"), DLT_STRING(snd_strerror(err)));
    }
@@ -185,15 +185,12 @@ static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_
 
 AlsaDevice *alsa_device_open(ebt_settings_t *settings)
 {
-   int err = (NULL != settings) ? 0 : -EINVAL;
+   int err = (NULL != settings) ? EXIT_SUCCESS : -EINVAL;
    static snd_output_t *jcd_out;
 
    AlsaDevice *dev = malloc(sizeof(*dev));
    if (!dev)
       return NULL;
-
-   dev->channels = AUDIO_TEST_CHANNELS;
-   dev->period = AUDIO_TEST_PERIOD_SZ_FRAMES;
 
    snd_output_stdio_attach(&jcd_out, stdout, 0);
 
@@ -206,6 +203,11 @@ AlsaDevice *alsa_device_open(ebt_settings_t *settings)
    if (0 <= err)
    {
       err = alsa_device_hw_params(dev->capture_handle, settings);
+      if (0 <= err)
+      {
+         /* got period OK */
+         dev->period = AUDIO_TEST_PERIOD_SZ_FRAMES;
+      }
    }
 
    if (0 <= err)

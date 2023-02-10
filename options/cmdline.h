@@ -45,6 +45,12 @@ struct gengetopt_args_info
  original value given at command line.  */
   const char *loops_help; /**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  help description.  */
+  int pauses_arg;	/**< @brief Number or pauses (stop, restart) to simulate.
+ (default='0').  */
+  char * pauses_orig;	/**< @brief Number or pauses (stop, restart) to simulate.
+ original value given at command line.  */
+  const char *pauses_help; /**< @brief Number or pauses (stop, restart) to simulate.
+ help description.  */
   int audio_flag;	/**< @brief enable audio runner (default=off).  */
   const char *audio_help; /**< @brief enable audio runner help description.  */
   int tdma_flag;	/**< @brief enable tdma x-fer (default=off).  */
@@ -53,17 +59,16 @@ struct gengetopt_args_info
   const char *uart_help; /**< @brief enable uart x-fer help description.  */
   int gpio_test_only_flag;	/**< @brief just check select() on gpio47 (default=off).  */
   const char *gpio_test_only_help; /**< @brief just check select() on gpio47 help description.  */
-  const char *pause_stress_help; /**< @brief test pause/resume robustness help description.  */
   const char *verbose_help; /**< @brief force VERBOSE mode help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int loops_given ;	/**< @brief Whether loops was given.  */
+  unsigned int pauses_given ;	/**< @brief Whether pauses was given.  */
   unsigned int audio_given ;	/**< @brief Whether audio was given.  */
   unsigned int tdma_given ;	/**< @brief Whether tdma was given.  */
   unsigned int uart_given ;	/**< @brief Whether uart was given.  */
   unsigned int gpio_test_only_given ;	/**< @brief Whether gpio-test-only was given.  */
-  unsigned int pause_stress_given ;	/**< @brief Whether pause-stress was given.  */
   unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
 
 } ;
