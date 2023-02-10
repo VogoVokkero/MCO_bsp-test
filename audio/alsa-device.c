@@ -35,16 +35,6 @@
 
 DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
-struct AlsaDevice_
-{
- //  int channels;
-   int period;
-   snd_pcm_t *capture_handle;
-   snd_pcm_t *playback_handle;
-   int readN, writeN;
-   struct pollfd *read_fd, *write_fd;
-};
-
 static int alsa_device_hw_params(snd_pcm_t *pcm_handle, ebt_settings_t *settings)
 {
    int err = ((NULL != pcm_handle) && (NULL != settings)) ? 0 : -EINVAL;
@@ -183,12 +173,12 @@ static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_
 
 //= alsa_device_open(AUDIO_TEST_DEVICE_NAME, AUDIO_TEST_RATE, AUDIO_TEST_CHANNELS, AUDIO_TEST_PERIOD_SZ_FRAMES, settings);
 
-AlsaDevice *alsa_device_open(ebt_settings_t *settings)
+AlsaDevice_t *alsa_device_open(ebt_settings_t *settings)
 {
    int err = (NULL != settings) ? EXIT_SUCCESS : -EINVAL;
    static snd_output_t *jcd_out;
 
-   AlsaDevice *dev = malloc(sizeof(*dev));
+   AlsaDevice_t *dev = malloc(sizeof(*dev));
    if (!dev)
       return NULL;
 
@@ -268,7 +258,7 @@ AlsaDevice *alsa_device_open(ebt_settings_t *settings)
    return dev;
 }
 
-void alsa_device_close(AlsaDevice *dev)
+void alsa_device_close(AlsaDevice_t *dev)
 {
    DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_close"));
 
@@ -277,7 +267,7 @@ void alsa_device_close(AlsaDevice *dev)
    free(dev);
 }
 
-snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
+snd_pcm_sframes_t alsa_device_readn(AlsaDevice_t *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
@@ -322,7 +312,7 @@ snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len)
    return err;
 }
 
-snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
+snd_pcm_sframes_t alsa_device_writen(AlsaDevice_t *dev, void **ch_buf, int len)
 {
    snd_pcm_sframes_t err;
 
@@ -352,7 +342,7 @@ snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len)
    return err;
 }
 
-int alsa_device_readi(AlsaDevice *dev, void *buf, int len)
+int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len)
 {
    int err;
    /*fprintf (stderr, "-");*/
@@ -391,7 +381,7 @@ int alsa_device_readi(AlsaDevice *dev, void *buf, int len)
    return 0;
 }
 
-int alsa_device_writei(AlsaDevice *dev, const void *buf, int len)
+int alsa_device_writei(AlsaDevice_t *dev, const void *buf, int len)
 {
    int err;
 
@@ -423,7 +413,7 @@ int alsa_device_writei(AlsaDevice *dev, const void *buf, int len)
    return 0;
 }
 
-int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds)
+int alsa_device_capture_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds)
 {
    unsigned short revents = 0;
    int ret = snd_pcm_poll_descriptors_revents(dev->capture_handle, pfds, dev->readN, &revents);
@@ -444,7 +434,7 @@ int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int
    return ret;
 }
 
-int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds)
+int alsa_device_playback_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds)
 {
    unsigned short revents = 0;
    int ret = snd_pcm_poll_descriptors_revents(dev->playback_handle, pfds + dev->readN, dev->writeN, &revents);
@@ -464,7 +454,7 @@ int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned in
    return ret;
 }
 
-void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
+void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf)
 {
    int ret = 0;
 
@@ -510,12 +500,12 @@ void alsa_device_startn(AlsaDevice *dev, void **ch_buf)
    }
 }
 
-snd_pcm_state_t alsa_device_state(AlsaDevice *dev)
+snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev)
 {
    return snd_pcm_state(dev->playback_handle);
 }
 
-int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_buf)
+int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_buf)
 {
    int ret = 0;
    if (NULL != dev)
@@ -540,7 +530,7 @@ int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_bu
    return ret;
 }
 
-void alsa_device_recover(AlsaDevice *dev, void **ch_buf, int err)
+void alsa_device_recover(AlsaDevice_t *dev, void **ch_buf, int err)
 {
 #if 0
    snd_pcm_prepare(dev->playback_handle);
@@ -553,12 +543,12 @@ void alsa_device_recover(AlsaDevice *dev, void **ch_buf, int err)
 #endif
 }
 
-int alsa_device_nfds(AlsaDevice *dev)
+int alsa_device_nfds(AlsaDevice_t *dev)
 {
    return dev->writeN + dev->readN;
 }
 
-void alsa_device_getfds(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds)
+void alsa_device_getfds(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds)
 {
    int i;
    assert(nfds >= dev->writeN + dev->readN);

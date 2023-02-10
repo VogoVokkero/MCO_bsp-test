@@ -27,7 +27,7 @@ static void *ch_bufs[AUDIO_TEST_CHANNELS] = {0};
 
 static unsigned int nfds = 0;
 static struct pollfd *pfds = NULL;
-static AlsaDevice *audio_dev = NULL;
+static AlsaDevice_t *audio_dev = NULL;
 
 static void *audio_runner(void *p_data)
 {

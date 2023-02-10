@@ -46,37 +46,43 @@ extern "C"
 {
 #endif
 
-   struct AlsaDevice_;
+   typedef struct AlsaDevice_
+   {
+      //  int channels;
+      int period;
+      snd_pcm_t *capture_handle;
+      snd_pcm_t *playback_handle;
+      int readN, writeN;
+      struct pollfd *read_fd, *write_fd;
+   } AlsaDevice_t;
 
-   typedef struct AlsaDevice_ AlsaDevice;
+   AlsaDevice_t *alsa_device_open(ebt_settings_t *settings);
 
-   AlsaDevice *alsa_device_open(ebt_settings_t *settings);
+   void alsa_device_close(AlsaDevice_t *dev);
 
-   void alsa_device_close(AlsaDevice *dev);
+   int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_buf);
 
-   int alsa_device_pause(AlsaDevice *dev, const uint8_t pause_nResume, void **ch_buf);
+   void alsa_device_recover(AlsaDevice_t *dev, void **ch_buf, int err);
 
-   void alsa_device_recover(AlsaDevice *dev, void **ch_buf, int err);
+   snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev);
 
-   snd_pcm_state_t alsa_device_state(AlsaDevice *dev);
+   int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len);
 
-   int alsa_device_readi(AlsaDevice *dev, void *buf, int len);
+   int alsa_device_writei(AlsaDevice_t *dev, const void *buf, int len);
 
-   int alsa_device_writei(AlsaDevice *dev, const void *buf, int len);
+   snd_pcm_sframes_t alsa_device_readn(AlsaDevice_t *dev, void **ch_buf, int len);
 
-   snd_pcm_sframes_t alsa_device_readn(AlsaDevice *dev, void **ch_buf, int len);
+   snd_pcm_sframes_t alsa_device_writen(AlsaDevice_t *dev, void **ch_buf, int len);
 
-   snd_pcm_sframes_t alsa_device_writen(AlsaDevice *dev, void **ch_buf, int len);
+   int alsa_device_capture_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
 
-   int alsa_device_capture_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   int alsa_device_playback_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
 
-   int alsa_device_playback_ready(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf);
 
-   void alsa_device_startn(AlsaDevice *dev, void **ch_buf);
+   int alsa_device_nfds(AlsaDevice_t *dev);
 
-   int alsa_device_nfds(AlsaDevice *dev);
-
-   void alsa_device_getfds(AlsaDevice *dev, struct pollfd *pfds, unsigned int nfds);
+   void alsa_device_getfds(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
 
 #ifdef __cplusplus
 }
