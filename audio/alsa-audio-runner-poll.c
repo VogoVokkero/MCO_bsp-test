@@ -143,8 +143,11 @@ static void *audio_runner(void *p_data)
 
 			if ((0U < settings->pauses) && (4U == (nb_loops & 0x7F)))
 			{
-				int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("||"), DLT_UINT32(paused));
+				//int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_VERBOSE, DLT_STRING("||")); //, DLT_UINT32(paused));
+
+
+				sleep(4);
 
 				settings->pauses--;
 			}

@@ -159,6 +159,34 @@ static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_
       }
    }
 
+   /* Handle X-run with silence */
+   if (0 <= err)
+   {
+      err = snd_pcm_sw_params_set_stop_threshold(pcm_handle, sw_params, INT32_MAX);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_stop_threshold"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_sw_params_set_silence_threshold(pcm_handle, sw_params, 0U);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_silence_threshold"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
+   if (0 <= err)
+   {
+      err = snd_pcm_sw_params_set_silence_size(pcm_handle, sw_params, INT32_MAX);
+      if (0 < err)
+      {
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_silence_size"), DLT_STRING(snd_strerror(err)));
+      }
+   }
+
    if (0 <= err)
    {
       err = snd_pcm_sw_params(pcm_handle, sw_params);
