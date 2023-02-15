@@ -565,9 +565,9 @@ int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_
 #ifndef USE_SND_PCM_LINK
          snd_pcm_drain(dev->playback_handle);
 #endif
-         /* I would expect drain to take care or bloquing what ever time is required,
-          * but it seems this is still needed for some reason, so resume does ok
-          * maybe the stop threshold set to inject silence in case of x-run explains this. 
+         /* I would expect drain to take care or blocking whatever time is required,
+          * but it seems this pause is needed for some reason, so resume does ok.
+          * Maybe the stop threshold set to inject silence in case of x-run explains this. 
           */
          usleep(AUDIO_TEST_PERIOD_TIME_US);
 
