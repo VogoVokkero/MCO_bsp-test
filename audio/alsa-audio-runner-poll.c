@@ -131,22 +131,19 @@ static void *audio_runner(void *p_data)
 			}
 #endif
 
+			/* Stress (full) pause/resume cycle */
 			if ((0U < settings->pauses) && (4U == (nb_loops & 0xFF)))
 			{
 				 int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("pausing"));
 
 				(void)alsa_device_state(audio_dev, 0 /*play*/ );
-
 				(void)alsa_device_state(audio_dev, 1 /*rec*/ );
-
-				usleep(AUDIO_TEST_PERIOD_TIME_US);
 
 				alsa_device_pause(audio_dev, 0, ch_bufs);
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("resuming"));
 
 				(void)alsa_device_state(audio_dev, 0);
-
 				(void)alsa_device_state(audio_dev, 1 /*rec*/ );
 
 				settings->pauses--;
