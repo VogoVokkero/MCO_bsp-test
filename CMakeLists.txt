@@ -22,6 +22,7 @@ add_executable(esg-bsp-test
     elite/elite-spidev.c
     elite/elite-slave-ready-gpio.c
     auvitran/avxSpi.c
+    auvitran/spi.c
     )
 
 add_definitions(-g -O0 -fstack-protector-strong -fno-omit-frame-pointer)

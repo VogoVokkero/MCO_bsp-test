@@ -25,7 +25,7 @@ Traces are crucial for real-time uses, e.g. for the audio, the default scenario 
 
 To enable trace on PC/Native side, you may have to hack the owner or _/tmp/dlt_ with this a chown command, just add this pipe to your group.  
 
-## Audio Loop
+## SUBSYSTEM : Audio Loop
 
 The Audio runner is based on a sample app from http://equalarea.com/paul/alsa-audio.html
 
@@ -53,7 +53,7 @@ a ref app from the ALSA projet is also built as 'alsa-poll-example'
 https://github.com/TomDataworks/whisper_client/blob/master/celt-0.7.0-src/tools/alsa_device.c
 
 
-## Elite : SPI/TDMA Protocol Stub
+## SUBSYSTEM : Elite : SPI/TDMA Protocol Stub
 
 Using Elite/SPI protocol, provide an audio frames streaming stub: 
 * the VO8346 must be in audio mode
@@ -69,7 +69,7 @@ manual dump of the slave-reay config:
 
 !!! use option `--tdma` to activate the audio loop.
 
-## Elite UART Protocol
+## SUBSYSTEM : Elite : UART Protocol
 
 #### test and debug on PC
 
@@ -82,6 +82,11 @@ the idea is that:
 * dlt traces will let you know whatg the test app does of it
 
 !!! use option `--uart` to activate the audio loop.
+
+## SUBSYSTEM : Auvitran Interface
+
+This test module allows to exercise the spidev device, used to configure de Auvitran modules.
+At this moment, no stress option is available (TODO), is is used mainly to try for a clean mute/demute when we reset the audio devices (ESG-190 workaround)
 
 #### getting, building and running tty0tty
 

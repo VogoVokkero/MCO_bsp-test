@@ -17,9 +17,6 @@
 
 #include "avxSpi.h"
 #include "avxDefs.h"
-#include <linux/spi/spidev.h>
-
-#include "dlt-client.h"
 
 DLT_IMPORT_CONTEXT(dlt_ctxt_avx);
 
@@ -904,7 +901,7 @@ int avx_get_slot_page_address(avx_device *dev, int slot, page_type_t page_type, 
       break;
 
    default:
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Invalid page type %d", page_type));
+      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Invalid page type"), DLT_UINT32(page_type));
       return -EINVAL;
    }
 
