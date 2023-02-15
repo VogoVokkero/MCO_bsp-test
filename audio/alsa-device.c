@@ -35,6 +35,8 @@
 
 DLT_IMPORT_CONTEXT(dlt_ctxt_audio);
 
+#define USE_SILENCE /* use silence setytings, to handle x-run*/
+
 static int alsa_device_hw_params(snd_pcm_t *pcm_handle, ebt_settings_t *settings)
 {
    int err = ((NULL != pcm_handle) && (NULL != settings)) ? 0 : -EINVAL;
@@ -159,6 +161,7 @@ static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_
       }
    }
 
+#ifdef USE_SILENCE
    /* Handle X-run with silence */
    if (0 <= err)
    {
@@ -186,6 +189,7 @@ static int alsa_device_sw_params(snd_pcm_t *pcm_handle, snd_pcm_uframes_t avail_
          DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_sw_params_set_silence_size"), DLT_STRING(snd_strerror(err)));
       }
    }
+#endif
 
    if (0 <= err)
    {
@@ -378,7 +382,6 @@ int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len)
    {
       if (err < 0)
       {
-         // fprintf(stderr, "error %d, EPIPE = %d\n", err, EPIPE);
          if (err == -EPIPE)
          {
             fprintf(stderr, "An overrun has occured, reseting capture\n");
@@ -398,7 +401,6 @@ int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len)
             fprintf(stderr, "cannot prepare audio interface for use (%s)\n",
                     snd_strerror(err));
          }
-         /*alsa_device_read(dev,pcm,len);*/
       }
       else
       {
@@ -506,6 +508,7 @@ void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf)
          DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("snd_pcm_prepare play"), DLT_STRING(snd_strerror(ret)));
       }
 
+//#ifdef USE_SILENCE
       ret = alsa_device_writen(dev, ch_buf, dev->period);
       if (0 > ret)
       {
@@ -517,6 +520,7 @@ void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf)
       {
          DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("alsa_device_writen pre-roll failed, PERIOD1"));
       }
+//#endif
 
 #ifndef USE_SND_PCM_LINK
       /* it seem pcm are already running at this point and start is not needed in link mode.
@@ -528,9 +532,24 @@ void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf)
    }
 }
 
-snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev)
+snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev, uint8_t rec_nPlay)
 {
-   return snd_pcm_state(dev->playback_handle);
+   snd_pcm_t *pcm = NULL;
+   snd_pcm_state_t state = SND_PCM_STATE_LAST;
+
+   if (NULL != dev)
+   {
+      pcm = (0 != rec_nPlay) ? dev->capture_handle : dev->playback_handle;
+
+      if (NULL != pcm)
+      {
+         state = snd_pcm_state(pcm);
+      }
+   }
+
+   DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("alsa_device_state (pcm/PnR/state)"), DLT_HEX32((uint32_t)pcm), DLT_UINT8(rec_nPlay), DLT_UINT32(state));
+
+   return state;
 }
 
 int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_buf)
@@ -538,15 +557,15 @@ int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_
    int ret = 0;
    if (NULL != dev)
    {
+      DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("alsa_device_pause"), DLT_UINT8(pause_nResume));
+
       if (pause_nResume)
       {
-         snd_pcm_prepare(dev->capture_handle);
-         ret = snd_pcm_drain(dev->capture_handle);
+         ret = snd_pcm_drain(dev->playback_handle);
 #ifndef USE_SND_PCM_LINK
-         snd_pcm_prepare(dev->playback_handle);
          snd_pcm_drain(dev->playback_handle);
 #endif
-         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_drop"), DLT_STRING(snd_strerror(ret)));
+         DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("snd_pcm_drain"), DLT_STRING(snd_strerror(ret)));
       }
       else
       {

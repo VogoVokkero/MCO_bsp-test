@@ -88,16 +88,6 @@ static void *audio_runner(void *p_data)
 			}
 			else
 			{
-				/* check device state */
-				snd_pcm_state_t state = alsa_device_state(audio_dev);
-
-				if (SND_PCM_STATE_SETUP == state)
-				{
-					/* resume */
-					//	int paused = alsa_device_pause(audio_dev, 0 /*resume*/, ch_bufs);
-					DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("|>"));
-				}
-
 				/* Audio available from the soundcard (capture) */
 				if (FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds))
 				{
@@ -141,31 +131,23 @@ static void *audio_runner(void *p_data)
 			}
 #endif
 
-			if ((0U < settings->pauses) && (4U == (nb_loops & 0x7FF)))
+			if ((0U < settings->pauses) && (4U == (nb_loops & 0xFF)))
 			{
-				// int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("pausing 2s"));
+				 int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("pausing"));
 
-				snd_pcm_state_t state = alsa_device_state(audio_dev);
+				(void)alsa_device_state(audio_dev, 0 /*play*/ );
 
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("state"), DLT_UINT32(state));
+				(void)alsa_device_state(audio_dev, 1 /*rec*/ );
 
-				snd_pcm_drop(audio_dev->playback_handle);
+				usleep(AUDIO_TEST_PERIOD_TIME_US);
 
-				state = alsa_device_state(audio_dev);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("state"), DLT_UINT32(state));
+				alsa_device_pause(audio_dev, 0, ch_bufs);
+				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("resuming"));
 
-				sleep(2);
+				(void)alsa_device_state(audio_dev, 0);
 
-				snd_pcm_prepare(audio_dev->playback_handle);
-
-				state = alsa_device_state(audio_dev);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("state"), DLT_UINT32(state));
-
-				snd_pcm_start(audio_dev->playback_handle);
-
-				state = alsa_device_state(audio_dev);
-				DLT_LOG(dlt_ctxt_audio, DLT_LOG_WARN, DLT_STRING("state"), DLT_UINT32(state));
+				(void)alsa_device_state(audio_dev, 1 /*rec*/ );
 
 				settings->pauses--;
 			}

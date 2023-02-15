@@ -64,7 +64,7 @@ extern "C"
 
    void alsa_device_recover(AlsaDevice_t *dev, void **ch_buf, int err);
 
-   snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev);
+   snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev, uint8_t rec_nPlay);
 
    int alsa_device_readi(AlsaDevice_t *dev, void *buf, int len);
 
