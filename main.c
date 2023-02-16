@@ -14,13 +14,20 @@ enum
 {
 	RUNNER_AUDIO = 0,	   // alsa
 	RUNNER_ELITE_TDMA = 1, // Elite TDMA (spi)
-	RUNNER_ELITE_UDSP = 1, // Elite TDMA (spi)
-	RUNNER_INVALID = 2
+	RUNNER_ELITE_UDSP = 2, // Elite TDMA (spi)
+	RUNNER_RACK = 3,	   // auvitran rack
+	RUNNER_INVALID = 4
 };
 
 pthread_t test_runner[RUNNER_INVALID] = {0};
 
-ebt_settings_t g_settings = { 1000U, DLT_LOG_INFO };
+ebt_settings_t g_settings =
+	{
+		.nb_loops = 1000U,
+		.verbosity = DLT_LOG_INFO,
+		.pauses = 0U,
+		.rack_freq = 0U
+	};
 
 int main(int argc, char **argv)
 {
@@ -36,7 +43,7 @@ int main(int argc, char **argv)
 
 	dlt_client_init("BTST", "ESG BSP Test App", DLT_LOG_INFO);
 
-	if (0!= args_info.verbose_given)
+	if (0 != args_info.verbose_given)
 	{
 		g_settings.verbosity = DLT_LOG_VERBOSE;
 	}
@@ -47,14 +54,21 @@ int main(int argc, char **argv)
 
 	g_settings.nb_loops = args_info.loops_arg;
 	g_settings.pauses = args_info.pauses_arg;
+	g_settings.rack_freq = args_info.rack_arg;
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst, "BTST", "BSP Test suite", g_settings.verbosity, DLT_TRACE_STATUS_DEFAULT);
 
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio enabled:"), DLT_INT32(args_info.audio_flag));
+
 	if (0 != args_info.audio_flag)
 	{
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio : loops:"), DLT_UINT32(g_settings.nb_loops));
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("audio : pauses:"), DLT_INT32(args_info.pauses_arg));
+	}
+
+	if (0 != args_info.rack_given)
+	{
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("rack read freq: "), DLT_INT32(g_settings.rack_freq));
 	}
 
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(args_info.tdma_flag));
@@ -64,7 +78,7 @@ int main(int argc, char **argv)
 	/* quick ctr+c test for the slave-ready GPIO */
 	if ((EXIT_SUCCESS == ret) && (1 == args_info.gpio_test_only_flag))
 	{
-		elite_gpio_t blah = { 0 };
+		elite_gpio_t blah = {0};
 
 		elite_slave_ready_gpio_init(&blah, &g_settings);
 
@@ -74,19 +88,25 @@ int main(int argc, char **argv)
 		}
 	}
 
+	/* check if auvitran interface test is wanted, set the default gains and audio matrix */
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.rack_given))
+	{
+		ret = rack_init(&test_runner[RUNNER_RACK], (void *)&g_settings);
+	}
+
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.audio_flag))
 	{
-		ret = audio_init_poll(&test_runner[RUNNER_AUDIO], (void*)&g_settings);
+		ret = audio_init_poll(&test_runner[RUNNER_AUDIO], (void *)&g_settings);
 	}
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.tdma_flag))
 	{
-		ret = elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], (void*)&g_settings);
+		ret = elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], (void *)&g_settings);
 	}
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.uart_flag))
 	{
-		ret = elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], (void*)&g_settings);
+		ret = elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], (void *)&g_settings);
 	}
 
 	/* Wait for any valid runner to complete */
@@ -100,14 +120,19 @@ int main(int argc, char **argv)
 		pthread_join(test_runner[RUNNER_ELITE_TDMA], NULL);
 	}
 
-/* we don't join the uard runner, we just kill it when comm
- * is no longuer needed
- 
-	if (0 != test_runner[RUNNER_ELITE_UDSP])
+	if (0 != test_runner[RUNNER_RACK])
 	{
-		pthread_join(test_runner[RUNNER_ELITE_UDSP], NULL);
+		pthread_join(test_runner[RUNNER_RACK], NULL);
 	}
-*/
+
+	/* we don't join the uard runner, we just kill it when comm
+	 * is no longuer needed
+
+		if (0 != test_runner[RUNNER_ELITE_UDSP])
+		{
+			pthread_join(test_runner[RUNNER_ELITE_UDSP], NULL);
+		}
+	*/
 
 	dlt_client_exit();
 

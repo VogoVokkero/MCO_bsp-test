@@ -21,6 +21,7 @@ add_executable(esg-bsp-test
     tdma/elite-tdma-runner.c
     tdma/elite-slave-ready-gpio.c
     auvitran/avxSpi.c
+    auvitran/rack-runner.c
     spidev/esg-spidev.c
     )
 
