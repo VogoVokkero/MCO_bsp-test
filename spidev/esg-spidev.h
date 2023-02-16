@@ -1,17 +1,8 @@
-/*
- ============================================================================
- Name        : spi.h
- Author      : tmu
- Version     :
- Copyright   : Closed
- Description : spi use tools
- ============================================================================
- */
-#ifndef __SPI_TEST_H__
-#define __SPI_TEST_H__
+#ifndef ESG_SPIDEV
+#define ESG_SPIDEV
+#pragma once
 
-#include "dlt-client.h"
-#include <linux/spi/spidev.h>
+#define SPI_STM_SPEED  4000000
 
 typedef struct{
     int fd;                     //! Spi file descriptor
@@ -26,4 +17,4 @@ int spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, uint32
 int spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *rx, size_t len);
 void spi_close(spi_dev_t *spi_struct);
 
-#endif //__SPI_TEST_H__
+#endif //ESG_SPIDEV

@@ -15,10 +15,13 @@
 #include <strings.h>
 #include <string.h>
 
+#include "linux/spi/spidev.h"
 #include "avxSpi.h"
 #include "avxDefs.h"
+#include "dlt-client.h"
 
-DLT_IMPORT_CONTEXT(dlt_ctxt_avx);
+
+DLT_DECLARE_CONTEXT(dlt_ctxt_avx);
 
 /* Internal functions */
 static int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, uint8_t mask, uint8_t *data);
@@ -59,7 +62,6 @@ int avx_init(avx_device *dev, char *dev_path)
    dev->fast_support = (sr1 & SR1_FAST_MASK) > 0;
    dev->mbox_support = (sr1 & SR1_MBOX_MASK) > 0;
 
-  // TRACE_PRINT(trace_info, trace_rackAuvitran, "Auvitran Rack - burst:%d - fast:%d - mbox:%d", dev->burst_support, dev->fast_support, dev->mbox_support);
    return 0;
 }
 

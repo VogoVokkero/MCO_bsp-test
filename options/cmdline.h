@@ -51,6 +51,9 @@ struct gengetopt_args_info
  original value given at command line.  */
   const char *pauses_help; /**< @brief Number or pauses (stop, restart) to simulate.
  help description.  */
+  int rack_arg;	/**< @brief frequency for reading peak-meters (default='0').  */
+  char * rack_orig;	/**< @brief frequency for reading peak-meters original value given at command line.  */
+  const char *rack_help; /**< @brief frequency for reading peak-meters help description.  */
   int audio_flag;	/**< @brief enable audio runner (default=off).  */
   const char *audio_help; /**< @brief enable audio runner help description.  */
   int tdma_flag;	/**< @brief enable tdma x-fer (default=off).  */
@@ -65,6 +68,7 @@ struct gengetopt_args_info
   unsigned int version_given ;	/**< @brief Whether version was given.  */
   unsigned int loops_given ;	/**< @brief Whether loops was given.  */
   unsigned int pauses_given ;	/**< @brief Whether pauses was given.  */
+  unsigned int rack_given ;	/**< @brief Whether rack was given.  */
   unsigned int audio_given ;	/**< @brief Whether audio was given.  */
   unsigned int tdma_given ;	/**< @brief Whether tdma was given.  */
   unsigned int uart_given ;	/**< @brief Whether uart was given.  */

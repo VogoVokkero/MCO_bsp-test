@@ -38,6 +38,7 @@ const char *gengetopt_args_info_help[] = {
   "  -V, --version         Print version and exit",
   "  -l, --loops=INT       Number or cycles for each running.this is roughly the\n                          number of 20ms audio periods to process, or 10ms SPI\n                          messages\n                            (default=`1000')",
   "  -p, --pauses=INT      Number or pauses (stop, restart) to simulate.\n                            (default=`0')",
+  "  -r, --rack=INT        frequency for reading peak-meters  (default=`0')",
   "      --audio           enable audio runner  (default=off)",
   "      --tdma            enable tdma x-fer  (default=off)",
   "      --uart            enable uart x-fer  (default=off)",
@@ -96,6 +97,7 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->version_given = 0 ;
   args_info->loops_given = 0 ;
   args_info->pauses_given = 0 ;
+  args_info->rack_given = 0 ;
   args_info->audio_given = 0 ;
   args_info->tdma_given = 0 ;
   args_info->uart_given = 0 ;
@@ -111,6 +113,8 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->loops_orig = NULL;
   args_info->pauses_arg = 0;
   args_info->pauses_orig = NULL;
+  args_info->rack_arg = 0;
+  args_info->rack_orig = NULL;
   args_info->audio_flag = 0;
   args_info->tdma_flag = 0;
   args_info->uart_flag = 0;
@@ -127,11 +131,12 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->version_help = gengetopt_args_info_help[1] ;
   args_info->loops_help = gengetopt_args_info_help[2] ;
   args_info->pauses_help = gengetopt_args_info_help[3] ;
-  args_info->audio_help = gengetopt_args_info_help[4] ;
-  args_info->tdma_help = gengetopt_args_info_help[5] ;
-  args_info->uart_help = gengetopt_args_info_help[6] ;
-  args_info->gpio_test_only_help = gengetopt_args_info_help[7] ;
-  args_info->verbose_help = gengetopt_args_info_help[8] ;
+  args_info->rack_help = gengetopt_args_info_help[4] ;
+  args_info->audio_help = gengetopt_args_info_help[5] ;
+  args_info->tdma_help = gengetopt_args_info_help[6] ;
+  args_info->uart_help = gengetopt_args_info_help[7] ;
+  args_info->gpio_test_only_help = gengetopt_args_info_help[8] ;
+  args_info->verbose_help = gengetopt_args_info_help[9] ;
   
 }
 
@@ -223,6 +228,7 @@ cmdline_parser_release (struct gengetopt_args_info *args_info)
 
   free_string_field (&(args_info->loops_orig));
   free_string_field (&(args_info->pauses_orig));
+  free_string_field (&(args_info->rack_orig));
   
   
 
@@ -261,6 +267,8 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "loops", args_info->loops_orig, 0);
   if (args_info->pauses_given)
     write_into_file(outfile, "pauses", args_info->pauses_orig, 0);
+  if (args_info->rack_given)
+    write_into_file(outfile, "rack", args_info->rack_orig, 0);
   if (args_info->audio_given)
     write_into_file(outfile, "audio", 0, 0 );
   if (args_info->tdma_given)
@@ -526,6 +534,7 @@ cmdline_parser_internal (
         { "version",	0, NULL, 'V' },
         { "loops",	1, NULL, 'l' },
         { "pauses",	1, NULL, 'p' },
+        { "rack",	1, NULL, 'r' },
         { "audio",	0, NULL, 0 },
         { "tdma",	0, NULL, 0 },
         { "uart",	0, NULL, 0 },
@@ -534,7 +543,7 @@ cmdline_parser_internal (
         { 0,  0, 0, 0 }
       };
 
-      c = getopt_long (argc, argv, "hVl:p:v", long_options, &option_index);
+      c = getopt_long (argc, argv, "hVl:p:r:v", long_options, &option_index);
 
       if (c == -1) break;	/* Exit from `while (1)' loop.  */
 
@@ -572,6 +581,18 @@ cmdline_parser_internal (
               &(local_args_info.pauses_given), optarg, 0, "0", ARG_INT,
               check_ambiguity, override, 0, 0,
               "pauses", 'p',
+              additional_error))
+            goto failure;
+        
+          break;
+        case 'r':	/* frequency for reading peak-meters.  */
+        
+        
+          if (update_arg( (void *)&(args_info->rack_arg), 
+               &(args_info->rack_orig), &(args_info->rack_given),
+              &(local_args_info.rack_given), optarg, 0, "0", ARG_INT,
+              check_ambiguity, override, 0, 0,
+              "rack", 'r',
               additional_error))
             goto failure;
         

@@ -4,7 +4,7 @@
 
 #define DLT_CLIENT_MAIN_MODULE
 #include "esg-bsp-test.h"
-#include "elite/elite-slave-ready-gpio.h"
+#include "elite-slave-ready-gpio.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_btst)
 

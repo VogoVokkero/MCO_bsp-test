@@ -18,11 +18,10 @@ add_executable(esg-bsp-test
     audio/alsa-audio-runner-poll.c
     audio/alsa-device.c
     uart/elite-uart-runner.c
-    elite/elite-tdma-runner.c
-    elite/elite-spidev.c
-    elite/elite-slave-ready-gpio.c
+    tdma/elite-tdma-runner.c
+    tdma/elite-slave-ready-gpio.c
     auvitran/avxSpi.c
-    auvitran/spi.c
+    spidev/esg-spidev.c
     )
 
 add_definitions(-g -O0 -fstack-protector-strong -fno-omit-frame-pointer)
@@ -32,7 +31,7 @@ target_link_libraries(esg-bsp-test -pthread
     ${GPIOD_LIBRARIES}
     ${ALSA_LIBRARIES})
 
-target_include_directories(esg-bsp-test PUBLIC ./inc
+target_include_directories(esg-bsp-test PUBLIC ./inc ./spidev ./tdma
     ${CDLT_INCLUDE_DIRS}
     ${GPIOD_INCLUDE_DIRS}
     ${ALSA_INCLUDE_DIRS})

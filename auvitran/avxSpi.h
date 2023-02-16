@@ -7,13 +7,15 @@
  Description : avxSpi use tools
  ============================================================================
  */
-#ifndef __AVXSPI_TEST_H__
-#define __AVXSPI_TEST_H__
+#ifndef AVXSPI_H
+#define AVXSPI_H
+#pragma once
 
 #include <stdint.h>
 #include <stddef.h>
 
-#include "spi.h"
+#include "esg-spidev.h"
+#include "stdbool.h"
 
 typedef struct {
    spi_dev_t spi_dev;
@@ -72,4 +74,4 @@ int avx_get_slot_PIR(avx_device* dev, uint8_t slot, uint8_t *pir);
 
 int avx_get_slot_page_address(avx_device* dev, int slot, page_type_t page_type, uint8_t *page_address);
 
-#endif //__AVXSPI_TEST_H__
+#endif //AVXSPI_H

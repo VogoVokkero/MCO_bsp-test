@@ -4,9 +4,9 @@ ESG BSP Test Suite
 ## Overview
 #### Principle and Usage
 
-This application provides low-level stubbing for the BSP interfaces, to assess robustness.
+This application provides low-level stubbing for the BSP interfaces, to test against robustness.
 The idea is that you can enable
-* only one subsystem, like audio, spi transfert, uart parsing etc... and insure the elementary bricks are robust.
+* one subsystem at a time, like audio, spi transfert, uart parsing etc... and insure the elementary bricks are robust.
 * select any combo of interface, and check is when combined, the system is robust.
 * each interface is implemented using a init/loop scheme, with a so-called 'runner' that is executed as a pthread. The main process just waits (joins) all active runners.
 

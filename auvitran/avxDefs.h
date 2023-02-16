@@ -7,8 +7,9 @@
  Description : Definitions for the Auvitran Rack
  ============================================================================
  */
-#ifndef __AVX_DEFS_H__
-#define __AVX_DEFS_H__
+#ifndef AVX_DEFS_H
+#define AVX_DEFS_H
+#pragma once
 
 #define AVX_SPI_LOW_SPEED   	100000  // 100 kHz (startup speed)
 #define AVX_SPI_HIGH_SPEED	4000000 // 4 MHz
@@ -220,4 +221,4 @@ typedef struct{
     };
 }reg_vogo_CSPR_factory_reset_t;
 
-#endif //__AVX_DEFS_H__
+#endif //AVX_DEFS_H

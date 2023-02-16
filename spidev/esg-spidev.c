@@ -24,7 +24,7 @@
 
 #include "esg-bsp-test.h"
 
-#include "elite-spidev.h"
+#include "esg-spidev.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_spie);
 
@@ -60,7 +60,7 @@ static void hex_dump(const void *src, size_t length, size_t line_size,
         }
     }
 }
-#endif // debug_verbose
+#endif //spi_init debug_verbose
 
 //==============================================================================
 //! \brief Start an SPI IOCTL transfert
@@ -71,7 +71,7 @@ static void hex_dump(const void *src, size_t length, size_t line_size,
 //! \param  len: data len to transmit
 //! \return Data size receive on success; 0 if no data is received; < 0 if error
 //==============================================================================
-int elite_spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *rx, size_t len)
+int spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *rx, size_t len)
 {
     int ret;
 #ifdef debug_verbose
@@ -126,7 +126,7 @@ int elite_spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *
     return ret;
 }
 
-int elite_spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, uint32_t spi_mode)
+int spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, uint32_t spi_mode)
 {
     int ret = 0;
 
@@ -195,7 +195,7 @@ int elite_spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, 
     return spi_struct->fd;
 }
 
-void elite_spi_close(spi_dev_t *spi_struct)
+void spi_close(spi_dev_t *spi_struct)
 {
     if (spi_struct->fd)
     {

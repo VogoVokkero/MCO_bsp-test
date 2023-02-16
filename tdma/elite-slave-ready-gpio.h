@@ -17,7 +17,7 @@
 
 #include "esg-bsp-test.h"
 
-#define SPIDEV  "/dev/spidev3.0"
+#define TDMA_SPIDEV  "/dev/spidev3.0"
 #define GPIO_PORT_SPI_STM_READY 2
 #define GPIO_ID_SPI_STM_READY   15
 

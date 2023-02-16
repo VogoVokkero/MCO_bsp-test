@@ -12,7 +12,7 @@ version "1.0"   # don't use version if you're using automake
 option  "loops"          l "Number or cycles for each running.\
 this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n"      int     optional default="1000"
 option  "pauses"          p "Number or pauses (stop, restart) to simulate.\n"      int     optional default="0"
-
+option  "rack"        r "frequency for reading peak-meters"        int     optional default="0"
 option  "audio"       - "enable audio runner"        flag       off
 option  "tdma"        - "enable tdma x-fer"        flag       off
 option  "uart"        - "enable uart x-fer"        flag       off
