@@ -33,6 +33,8 @@ static void *rack_runner(void *p_data)
 
 	DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("EXIT"), DLT_UINT32(ret));
 
+	rack_release();
+
 	return (void *)ret;
 }
 

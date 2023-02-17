@@ -20,7 +20,7 @@
 #include "avxDefs.h"
 #include "dlt-client.h"
 
-DLT_DECLARE_CONTEXT(dlt_ctxt_avx);
+DLT_IMPORT_CONTEXT(dlt_ctxt_rack);
 
 /* Internal functions */
 static int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, uint8_t mask, uint8_t *data);
@@ -43,18 +43,23 @@ int avx_init(avx_device *dev, char *dev_path)
    int ret = EXIT_SUCCESS;
 
    ret = spi_init(&dev->spi_dev, dev_path, AVX_SPI_HIGH_SPEED, SPI_MODE_3);
-   if (ret < 0)
+   if (0 > ret)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed to initialize SPI device"));
-      return ret;
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed to initialize SPI device"));
    }
 
    /* Read SR1 register */
-   ret = avx_read_byte(dev, PAGE_0, REG_SR1, &sr1);
-   if (ret != 0)
+   if (EXIT_SUCCESS == ret)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed to read from Auvitran"), DLT_UINT32(errno));
-      return ret;
+      ret = avx_read_byte(dev, PAGE_0, REG_SR1, &sr1);
+      if (0 > ret)
+      {
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed to read from Auvitran"), DLT_INT32(ret));
+      }
+      else
+      {
+         ret = EXIT_SUCCESS;
+      }
    }
 
    dev->burst_support = (sr1 & SR1_BURST_MASK) > 0;
@@ -101,7 +106,7 @@ int avx_write_byte(avx_device *dev, int page, int offset, uint8_t data)
       ret = avx_write_byte(dev, PAGE_0, REG_PAGE, page);
       if (ret < 0)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err"), DLT_HEX32(page), DLT_UINT32(errno));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err"), DLT_HEX32(page), DLT_UINT32(errno));
          return ret;
       }
 
@@ -113,7 +118,7 @@ int avx_write_byte(avx_device *dev, int page, int offset, uint8_t data)
    ret = spi_transfer(&dev->spi_dev, tx_buff, NULL, sizeof(tx_buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
@@ -139,21 +144,21 @@ int avx_read_byte(avx_device *dev, int page, int offset, uint8_t *data)
    ret = spi_transfer(&dev->spi_dev, buff, NULL, sizeof(buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
    ret = spi_transfer(&dev->spi_dev, NULL, buff, sizeof(buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
    // Getting all 1s shows the rack is not connected
    if ((buff[0] == 0xFF) && (buff[1] == 0xFF))
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer, rack is not connected"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer, rack is not connected"));
       return -ENODEV;
    }
 
@@ -163,14 +168,14 @@ int avx_read_byte(avx_device *dev, int page, int offset, uint8_t *data)
       ret = spi_transfer(&dev->spi_dev, NULL, buff, sizeof(buff));
       if (ret == -1)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
          return errno;
       }
 
       if (buff[0] == 0)
       {
          // Still invalid: give up
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Invalid read from SPI"));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Invalid read from SPI"));
          return -EINVAL;
       }
    }
@@ -239,7 +244,7 @@ int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, 
       ret = avx_write_byte(dev, PAGE_0, REG_PAGE, page);
       if (ret < 0)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err)"), DLT_HEX32(page), DLT_UINT32(ret));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err)"), DLT_HEX32(page), DLT_UINT32(ret));
          return ret;
       }
 
@@ -249,21 +254,21 @@ int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, 
    ret = spi_transfer(&dev->spi_dev, buff, NULL, sizeof(buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
    ret = spi_transfer(&dev->spi_dev, NULL, buff, sizeof(buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
    // Getting all 1s shows the rack is not connected
    if ((buff[0] == 0xFF) && (buff[1] == 0xFF))
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer, rack is not connected"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer, rack is not connected"));
       return -ENODEV;
    }
 
@@ -273,14 +278,14 @@ int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, 
       ret = spi_transfer(&dev->spi_dev, NULL, buff, sizeof(buff));
       if (ret == -1)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
          return errno;
       }
 
       if (buff[0] == 0)
       {
          // Still invalid: give up
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Invalid read from SPI"));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Invalid read from SPI"));
          return -EINVAL;
       }
    }
@@ -308,7 +313,7 @@ int avx_write_burst(avx_device *dev, int page, int offset, const uint8_t *data, 
 
    if (!dev->burst_support)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Burst write not supported"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Burst write not supported"));
       return -ENOSYS;
    }
 
@@ -324,7 +329,7 @@ int avx_write_burst(avx_device *dev, int page, int offset, const uint8_t *data, 
       ret = avx_write_byte(dev, PAGE_0, REG_PAGE, page);
       if (ret < 0)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err)"), DLT_HEX32(page), DLT_UINT32(ret));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed changing (page/err)"), DLT_HEX32(page), DLT_UINT32(ret));
          return ret;
       }
 
@@ -336,7 +341,7 @@ int avx_write_burst(avx_device *dev, int page, int offset, const uint8_t *data, 
    ret = spi_transfer(&dev->spi_dev, tx_buff, NULL, sizeof(tx_buff));
    if (ret == -1)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
@@ -362,7 +367,7 @@ int avx_read_burst(avx_device *dev, int page, int offset, uint8_t *data, size_t 
 
    if (!dev->burst_support)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Burst read not supported"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Burst read not supported"));
       return -ENOSYS;
    }
 
@@ -372,16 +377,16 @@ int avx_read_burst(avx_device *dev, int page, int offset, uint8_t *data, size_t 
    bzero(tx_buff + 2, length + 1);
    bzero(rx_buff, sizeof(rx_buff));
    ret = spi_transfer(&dev->spi_dev, tx_buff, rx_buff, length + 2 + 1);
-   if (ret == -1)
+   if (0 > ret)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed SPI transfer (err)"), DLT_UINT32(errno));
       return errno;
    }
 
    if (rx_buff[2] == 0)
    {
       // Status byte is not ok
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Burst read failed"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Burst read failed"));
       return -EINVAL;
    }
 
@@ -449,12 +454,12 @@ int32_t avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, 
 
    if (answer[1] == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
       return -EIO;
    }
    if (answer[0] != data)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (data confirmation)"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (data confirmation)"));
       return -EIO;
    }
 
@@ -485,18 +490,18 @@ int32_t avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const
       ret = -ENOSYS;
    }
 
-   if ((EXIT_SUCCESS == ret) && (length == 1))
+   if ((0 <= ret) && (length == 1))
    {
       return avx_write_mailbox_byte(dev, slot, page, offset, data[0]);
    }
 
-   if (EXIT_SUCCESS == ret)
+   if (0 <= ret)
    {
       // Write data to page 2
       ret = avx_write_burst(dev, PAGE_2, 0, data, length);
    }
 
-   if (EXIT_SUCCESS == ret)
+   if (0 <= ret)
    {
       // ECS[0], ECS[1] and MOV[0] : page , slot and flags (WP0=1, MOV=1)
       config[0] = slot & SLOT_MASK;
@@ -507,7 +512,7 @@ int32_t avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const
       ret = avx_write_burst(dev, PAGE_0, REG_MBX_ECS_0, config, sizeof(config));
    }
 
-   if (EXIT_SUCCESS == ret)
+   if (0 <= ret)
    {
       // CMD
       cmd[0] = 0;
@@ -515,13 +520,13 @@ int32_t avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const
       ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
    }
 
-   if (EXIT_SUCCESS == ret)
+   if (0 <= ret)
    {
       /* Now wait for mailbox operation to complete */
       ret = avx_wait_mailbox_completion(dev);
    }
 
-   if (EXIT_SUCCESS == ret)
+   if (0 <= ret)
    {
       /* Read data back */
       ret = avx_read_burst(dev, PAGE_0, REG_MBX_ANS_0, answer, sizeof(answer));
@@ -529,7 +534,7 @@ int32_t avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const
 
    if (answer[1] == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
       ret = -EIO;
    }
 
@@ -557,7 +562,7 @@ int avx_read_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8
    ecs = slot & SLOT_MASK;
    ecs &= ~(MBX_WP0 & MBX_MOV);
    ret = avx_write_byte(dev, PAGE_0, REG_MBX_ECS_0, ecs);
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
@@ -566,28 +571,28 @@ int avx_read_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8
    cmd[0] = page;
    cmd[1] = (MBX_READ_PAGED << OFFSET_LENGTH) | (offset & OFFSET_MASK);
    ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
-   if (ret != 0)
+   if (0 >ret)
    {
       return ret;
    }
 
    /* Now wait for mailbox operation to complete */
    ret = avx_wait_mailbox_completion(dev);
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    /* Read data back */
    ret = avx_read_burst(dev, PAGE_0, REG_MBX_ANS_0, answer, sizeof(answer));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    if (answer[1] == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("avx_read_mailbox_byte failed"));
       return -EIO;
    }
 
@@ -631,7 +636,7 @@ int avx_read_mailbox(avx_device *dev, int slot, int page, int offset, uint8_t *d
    config[1] = page;
    config[2] = length - 1;
    ret = avx_write_burst(dev, PAGE_0, REG_MBX_ECS_0, config, sizeof(config));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
@@ -640,28 +645,28 @@ int avx_read_mailbox(avx_device *dev, int slot, int page, int offset, uint8_t *d
    cmd[0] = 0;
    cmd[1] = (MBX_READ_PAGED << OFFSET_LENGTH) | (offset & OFFSET_MASK);
    ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    /* Now wait for mailbox operation to complete */
    ret = avx_wait_mailbox_completion(dev);
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    /* Check status */
    ret = avx_read_byte(dev, PAGE_0, REG_MBX_ANS_1, &answer);
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    if (answer == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("avx_read_mailbox failed"));
       return -EIO;
    }
 
@@ -706,7 +711,7 @@ int avx_test_and_toggle_mailbox(avx_device *dev, uint8_t command, int slot, int 
    ecs[0] |= MBX_WP0;
    ecs[1] = page;
    ret = avx_write_burst(dev, PAGE_0, REG_MBX_ECS_0, ecs, sizeof(ecs));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
@@ -715,28 +720,28 @@ int avx_test_and_toggle_mailbox(avx_device *dev, uint8_t command, int slot, int 
    cmd[0] = mask;
    cmd[1] = (command << OFFSET_LENGTH) | (offset & OFFSET_MASK);
    ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    /* Now wait for mailbox operation to complete */
    ret = avx_wait_mailbox_completion(dev);
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    /* Read data back */
    ret = avx_read_burst(dev, PAGE_0, REG_MBX_ANS_0, answer, sizeof(answer));
-   if (ret != 0)
+   if (0 > ret)
    {
       return ret;
    }
 
    if (answer[1] == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
       return -EIO;
    }
 
@@ -793,9 +798,9 @@ int avx_wait_mailbox_completion(avx_device *dev)
    while (cmd_1)
    {
       ret = avx_read_byte(dev, PAGE_0, REG_MBX_CMD_1, &cmd_1);
-      if (ret != 0)
+      if (0 > ret)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed polling mailbox completion"));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed polling mailbox completion"));
          return ret;
       }
    }
@@ -892,7 +897,7 @@ int avx_get_slot_page_address(avx_device *dev, int slot, page_type_t page_type, 
       break;
 
    default:
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Invalid page type"), DLT_UINT32(page_type));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Invalid page type"), DLT_UINT32(page_type));
       return -EINVAL;
    }
 
@@ -920,7 +925,7 @@ int avx_flash_unlock(avx_device *dev, int slot, int page_fppr, uint32_t key)
    ret = avx_write_mailbox(dev, slot, page_fppr, REG_FPPR_FUCKR, (uint8_t *)&key, sizeof(key));
    if (ret != 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed writing FUCKR key (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed writing FUCKR key (slot)"), DLT_UINT32(slot));
       return ret;
    }
 
@@ -929,7 +934,7 @@ int avx_flash_unlock(avx_device *dev, int slot, int page_fppr, uint32_t key)
    ret = avx_write_mailbox(dev, slot, page_fppr, REG_FPPR_FCR, &fcr, sizeof(fcr));
    if (ret != 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed writing flash unlock command (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed writing flash unlock command (slot)"), DLT_UINT32(slot));
       return ret;
    }
 
@@ -937,7 +942,7 @@ int avx_flash_unlock(avx_device *dev, int slot, int page_fppr, uint32_t key)
    ret = avx_wait_flash_completion(dev, slot, page_fppr);
    if (ret != 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed waiting for flash command completion (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed waiting for flash command completion (slot)"), DLT_UINT32(slot));
       return ret;
    }
 
@@ -945,14 +950,14 @@ int avx_flash_unlock(avx_device *dev, int slot, int page_fppr, uint32_t key)
    ret = avx_read_mailbox(dev, slot, page_fppr, REG_FPPR_FCAR, (uint8_t *)&fcar, sizeof(fcar));
    if (ret != 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed reading flash unlock result (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed reading flash unlock result (slot)"), DLT_UINT32(slot));
       return ret;
    }
    fcar = (fcar >> FLASH_FCR_IN_FCAR) & 0xFF;
 
    if (fcar != FLASH_UNLOCK)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed unlocking flash (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed unlocking flash (slot)"), DLT_UINT32(slot));
       return -EIO;
    }
 
@@ -960,13 +965,13 @@ int avx_flash_unlock(avx_device *dev, int slot, int page_fppr, uint32_t key)
    ret = avx_read_mailbox(dev, slot, page_fppr, REG_FPPR_FSDR, &fsdr, sizeof(fsdr));
    if (ret != 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed reading flash unlock result (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed reading flash unlock result (slot)"), DLT_UINT32(slot));
       return ret;
    }
 
    if ((fsdr & FLASH_UNLOCKED_FLAG) == 0)
    {
-      DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Flash still locked (slot)"), DLT_UINT32(slot));
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Flash still locked (slot)"), DLT_UINT32(slot));
       return ret;
    }
 
@@ -993,7 +998,7 @@ int avx_wait_flash_completion(avx_device *dev, int slot, int page_fppr)
       ret = avx_read_mailbox(dev, slot, page_fppr, REG_FPPR_FCR, &fcr, sizeof(fcr));
       if (ret != 0)
       {
-         DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed polling flash command completion"));
+         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed polling flash command completion"));
          return ret;
       }
    }

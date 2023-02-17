@@ -26,7 +26,7 @@
 
 #include "esg-spidev.h"
 
-DLT_DECLARE_CONTEXT(dlt_ctxt_spie);
+DLT_IMPORT_CONTEXT(dlt_ctxt_rack);
 
 #ifdef debug_verbose
 static void hex_dump(const void *src, size_t length, size_t line_size,
@@ -60,7 +60,7 @@ static void hex_dump(const void *src, size_t length, size_t line_size,
         }
     }
 }
-#endif //spi_init debug_verbose
+#endif // spi_init debug_verbose
 
 //==============================================================================
 //! \brief Start an SPI IOCTL transfert
@@ -108,7 +108,7 @@ int spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *rx, si
     ret = ioctl(spi_struct->fd, SPI_IOC_MESSAGE(1), &tr);
     if (ret < 1)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't send spi message"));
+        DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't send spi message"));
     }
 
 #ifdef debug_verbose
@@ -128,14 +128,15 @@ int spi_transfer(spi_dev_t *spi_struct, uint8_t const *tx, uint8_t const *rx, si
 
 int spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, uint32_t spi_mode)
 {
-    int ret = 0;
+    int ret = EXIT_SUCCESS;
 
     // parse_opts(argc, argv);
     spi_struct->device = spi_device;
     spi_struct->fd = open(spi_struct->device, O_RDWR);
     if (spi_struct->fd < 0)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't open device"));
+        DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't open device"));
+        ret = errno;
     }
 
     /*
@@ -145,54 +146,76 @@ int spi_init(spi_dev_t *spi_struct, char *spi_device, uint32_t spi_speed, uint32
      */
     spi_struct->mode = spi_mode;
 
-    ret = ioctl(spi_struct->fd, SPI_IOC_WR_MODE32, &spi_struct->mode);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't set spi mode"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_WR_MODE32, &spi_struct->mode);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't set spi mode"));
+            ret = val;
+        }
     }
 
-    ret = ioctl(spi_struct->fd, SPI_IOC_RD_MODE32, &spi_struct->mode);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't get spi mode"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_RD_MODE32, &spi_struct->mode);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't get spi mode"));
+            ret = val;
+        }
     }
 
-    /*
-     * bits per word (default 8 bits)
-     */
-    ret = ioctl(spi_struct->fd, SPI_IOC_WR_BITS_PER_WORD, &spi_struct->bits);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't set bits per word"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_WR_BITS_PER_WORD, &spi_struct->bits);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't set bits per word"));
+            ret = val;
+        }
     }
 
-    ret = ioctl(spi_struct->fd, SPI_IOC_RD_BITS_PER_WORD, &spi_struct->bits);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't get bits per word"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_RD_BITS_PER_WORD, &spi_struct->bits);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't get bits per word"));
+            ret = val;
+        }
     }
 
     /*
      * max speed hz (defaut 500kHz)
      */
+
     spi_struct->speed = spi_speed;
-    ret = ioctl(spi_struct->fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_struct->speed);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't set max speed hz"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_struct->speed);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't set max speed hz"));
+            ret = val;
+        }
     }
 
-    ret = ioctl(spi_struct->fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_struct->speed);
-    if (ret == -1)
+    if (EXIT_SUCCESS == ret)
     {
-        DLT_LOG(dlt_ctxt_spie, DLT_LOG_VERBOSE, DLT_STRING("can't get max speed hz"));
+        int32_t val = ioctl(spi_struct->fd, SPI_IOC_RD_MAX_SPEED_HZ, &spi_struct->speed);
+        if (0 > val)
+        {
+            DLT_LOG(dlt_ctxt_rack, DLT_LOG_VERBOSE, DLT_STRING("can't get max speed hz"));
+            ret = val;
+        }
     }
 
-    DLT_LOG(dlt_ctxt_spie, DLT_LOG_INFO, DLT_STRING("spi mode"), DLT_UINT32(spi_struct->mode));
-    DLT_LOG(dlt_ctxt_spie, DLT_LOG_INFO, DLT_STRING("bits per word"), DLT_UINT32(spi_struct->bits));
-    DLT_LOG(dlt_ctxt_spie, DLT_LOG_INFO, DLT_STRING("max speed"), DLT_UINT32(spi_struct->speed));
+    DLT_LOG(dlt_ctxt_rack, DLT_LOG_INFO, DLT_STRING("spi mode"), DLT_UINT32(spi_struct->mode));
+    DLT_LOG(dlt_ctxt_rack, DLT_LOG_INFO, DLT_STRING("bits per word"), DLT_UINT32(spi_struct->bits));
+    DLT_LOG(dlt_ctxt_rack, DLT_LOG_INFO, DLT_STRING("max speed"), DLT_UINT32(spi_struct->speed));
 
-    return spi_struct->fd;
+    return ret;
 }
 
 void spi_close(spi_dev_t *spi_struct)

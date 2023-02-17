@@ -81,6 +81,8 @@ int add_slot(int slot, uint8_t product_id)
 
    RackAuvitran.slots[slot].product_id = product_id;
 
+   DLT_LOG(dlt_ctxt_rack, DLT_LOG_INFO, DLT_STRING("add_slot (#,product)"), DLT_UINT8(slot), DLT_HEX8(product_id));
+
    // Initialize all page addresses to -ENODATA
    memset(RackAuvitran.slots[slot].pages_addresses, -ENODATA, PAGE_TYPE_MAX);
 
@@ -117,14 +119,15 @@ static int set_slot_page_address(int slot, page_type_t page_type, uint8_t page_a
 //! \param  product_id: content of the PIR register on the given slot
 //! \return slot or error code if <0
 //==============================================================================
-static int find_slot(uint8_t product_id)
+static int32_t find_slot(uint8_t product_id)
 {
-   int slot = -ENOENT;
+   int32_t slot = -ENOENT;
 
-   for (slot = 0; slot < MAX_SLOT_NUMBERS; slot++)
+   for (uint8_t index; index < MAX_SLOT_NUMBERS; index++)
    {
-      if (RackAuvitran.slots[slot].product_id == product_id)
+      if (RackAuvitran.slots[index].product_id == product_id)
       {
+         slot = index;
          break;
       }
    }
@@ -205,7 +208,7 @@ int discover_slot(int slot)
       return ret;
    }
 
-   DLT_LOG(dlt_ctxt_rack, DLT_LOG_DEBUG, DLT_STRING("slot "), DLT_INT(slot), DLT_STRING(" contains PIR="), DLT_HEX8(PIR));
+   DLT_LOG(dlt_ctxt_rack, DLT_LOG_INFO, DLT_STRING("discover_slot (#/PIR)"), DLT_INT(slot), DLT_HEX8(PIR));
 
    ret = add_slot(slot, PIR);
    if (ret != 0)
@@ -310,7 +313,6 @@ static int32_t initialize_default_parameters(void)
    int32_t ret = EXIT_SUCCESS;
 
    /* Create default matrix */
-
 
    // If we have an AX4M card, then we set default gains
    if (find_slot(PID_AxC_AX4M) >= 0)
@@ -438,40 +440,39 @@ uint32_t rack_initialize(void)
    }
 
    /* Read rack product ID, just to check communication is consistent */
-   if (0 == ret)
+   if (0 <= ret)
    {
       ret = avx_get_rack_PIR(&RackAuvitran.avx_device, &PIR);
-      if (ret != 0)
+      if (0 > ret)
       {
          DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed reading rack PIR, err="), DLT_INT(ret));
       }
    }
 
-   if (PIR != PID_AxC_VOGO)
+   if ((0 <= ret) && (PIR != PID_AxC_VOGO))
    {
-      DLT_LOG(dlt_ctxt_rack, DLT_LOG_WARN, DLT_STRING("rack PIR is "), DLT_HEX8(PIR), DLT_STRING(", expected "), DLT_HEX8(PID_AxC_VOGO));
-      ret = -EINVAL;
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_WARN, DLT_STRING("rack PIR read/expected "), DLT_HEX8(PIR), DLT_HEX8(PID_AxC_VOGO), DLT_INT(ret));
    }
 
    /* Get page addresses for slot 14 which is the rack's matrix "virtual" slot */
-   if (0 == ret)
+   if (0 <= ret)
    {
       ret = discover_slot(MATRIX_SLOT);
    }
 
    /* Get page addresses for slot 15 which is the rack's core */
-   if (0 == ret)
+   if (0 <= ret)
    {
       ret = discover_slot(AVBX7_SLOT);
    }
 
    /* Check rack clocking capabilities are suitable to our needs */
-   if (0 == ret)
+   if (0 <= ret)
    {
       ret = check_clock_capabilities();
    }
 
-   if (0 == ret)
+   if (0 <= ret)
    {
       /* Now ask product ID for each slot and get page addresses */
       for (slot = FIRST_SLOT; slot <= LAST_SLOT; slot++)
@@ -480,19 +481,19 @@ uint32_t rack_initialize(void)
       }
    }
 
-   if (0 == ret)
+   if (0 <= ret)
    {
       // Apply default parameters for the slots we discovered
       ret = initialize_default_parameters();
-      if (ret != 0)
-      {
-         DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("Failed to apply default parameters, errno="), DLT_INT(ret));
-      }
+   }
+
+   if (0 > ret)
+   {
+      DLT_LOG(dlt_ctxt_rack, DLT_LOG_ERROR, DLT_STRING("rack_initialize failed (errno)"), DLT_INT(ret));
    }
 
    return ret;
 }
-
 
 //==============================================================================
 //! \brief Set audio gain
