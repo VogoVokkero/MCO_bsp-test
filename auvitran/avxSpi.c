@@ -20,13 +20,12 @@
 #include "avxDefs.h"
 #include "dlt-client.h"
 
-
 DLT_DECLARE_CONTEXT(dlt_ctxt_avx);
 
 /* Internal functions */
 static int avx_test_and_toggle(avx_device *dev, uint8_t command, int page, int offset, uint8_t mask, uint8_t *data);
 static int avx_test_and_toggle_mailbox(avx_device *dev, uint8_t command, int slot, int page, int offset, uint8_t mask, uint8_t *data);
-static int avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8_t data);
+static int32_t avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8_t data);
 static int avx_read_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8_t *data);
 static int avx_wait_mailbox_completion(avx_device *dev);
 static int avx_wait_flash_completion(avx_device *dev, int slot, int page_fppr);
@@ -41,7 +40,7 @@ static int avx_wait_flash_completion(avx_device *dev, int slot, int page_fppr);
 int avx_init(avx_device *dev, char *dev_path)
 {
    uint8_t sr1 = 0;
-   int ret;
+   int ret = EXIT_SUCCESS;
 
    ret = spi_init(&dev->spi_dev, dev_path, AVX_SPI_HIGH_SPEED, SPI_MODE_3);
    if (ret < 0)
@@ -62,7 +61,7 @@ int avx_init(avx_device *dev, char *dev_path)
    dev->fast_support = (sr1 & SR1_FAST_MASK) > 0;
    dev->mbox_support = (sr1 & SR1_MBOX_MASK) > 0;
 
-   return 0;
+   return ret;
 }
 
 //==============================================================================
@@ -178,7 +177,7 @@ int avx_read_byte(avx_device *dev, int page, int offset, uint8_t *data)
 
    *data = buff[1];
 
-   return 0;
+   return ret;
 }
 
 //==============================================================================
@@ -401,12 +400,12 @@ int avx_read_burst(avx_device *dev, int page, int offset, uint8_t *data, size_t 
 //! \param  data: byte to be written
 //! \return 0 in case of success, or negative errno error code
 //==============================================================================
-int avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8_t data)
+int32_t avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint8_t data)
 {
    uint8_t ecs[2];
    uint8_t cmd[2];
    uint8_t answer[2];
-   int ret;
+   int32_t ret;
 
    if (page == 0)
    {
@@ -473,78 +472,68 @@ int avx_write_mailbox_byte(avx_device *dev, int slot, int page, int offset, uint
 //! \param  length: size of buffer, must be < 32
 //! \return 0 in case of success, or negative errno error code
 //==============================================================================
-int avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const uint8_t *data, size_t length)
+int32_t avx_write_mailbox(avx_device *dev, int slot, int page, int offset, const uint8_t *data, size_t length)
 {
    uint8_t config[3];
    uint8_t cmd[2];
    uint8_t answer[2];
-   int ret;
+   int32_t ret = EXIT_SUCCESS;
 
-   if (length == 1)
+   if ((page == 0) || (length > AXC_PAGE_SIZE))
+   {
+      // We'll never write to page 0 on a slot
+      ret = -ENOSYS;
+   }
+
+   if ((EXIT_SUCCESS == ret) && (length == 1))
    {
       return avx_write_mailbox_byte(dev, slot, page, offset, data[0]);
    }
 
-   if (page == 0)
+   if (EXIT_SUCCESS == ret)
    {
-      // We'll never write to page 0 on a slot
-      return -ENOSYS;
+      // Write data to page 2
+      ret = avx_write_burst(dev, PAGE_2, 0, data, length);
    }
 
-   if (length > AXC_PAGE_SIZE)
+   if (EXIT_SUCCESS == ret)
    {
-      return -EINVAL;
+      // ECS[0], ECS[1] and MOV[0] : page , slot and flags (WP0=1, MOV=1)
+      config[0] = slot & SLOT_MASK;
+      config[0] |= MBX_MOV;
+      config[0] |= MBX_WP0;
+      config[1] = page;
+      config[2] = length - 1;
+      ret = avx_write_burst(dev, PAGE_0, REG_MBX_ECS_0, config, sizeof(config));
    }
 
-   // Write data to page 2
-   ret = avx_write_burst(dev, PAGE_2, 0, data, length);
-   if (ret != 0)
+   if (EXIT_SUCCESS == ret)
    {
-      return ret;
+      // CMD
+      cmd[0] = 0;
+      cmd[1] = (MBX_WRITE_PAGED << OFFSET_LENGTH) | (offset & OFFSET_MASK);
+      ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
    }
 
-   // ECS[0], ECS[1] and MOV[0] : page , slot and flags (WP0=1, MOV=1)
-   config[0] = slot & SLOT_MASK;
-   config[0] |= MBX_MOV;
-   config[0] |= MBX_WP0;
-   config[1] = page;
-   config[2] = length - 1;
-   ret = avx_write_burst(dev, PAGE_0, REG_MBX_ECS_0, config, sizeof(config));
-   if (ret != 0)
+   if (EXIT_SUCCESS == ret)
    {
-      return ret;
+      /* Now wait for mailbox operation to complete */
+      ret = avx_wait_mailbox_completion(dev);
    }
 
-   // CMD
-   cmd[0] = 0;
-   cmd[1] = (MBX_WRITE_PAGED << OFFSET_LENGTH) | (offset & OFFSET_MASK);
-   ret = avx_write_burst(dev, PAGE_0, REG_MBX_CMD_0, cmd, sizeof(cmd));
-   if (ret != 0)
+   if (EXIT_SUCCESS == ret)
    {
-      return ret;
-   }
-
-   /* Now wait for mailbox operation to complete */
-   ret = avx_wait_mailbox_completion(dev);
-   if (ret != 0)
-   {
-      return ret;
-   }
-
-   /* Read data back */
-   ret = avx_read_burst(dev, PAGE_0, REG_MBX_ANS_0, answer, sizeof(answer));
-   if (ret != 0)
-   {
-      return ret;
+      /* Read data back */
+      ret = avx_read_burst(dev, PAGE_0, REG_MBX_ANS_0, answer, sizeof(answer));
    }
 
    if (answer[1] == 0)
    {
       DLT_LOG(dlt_ctxt_avx, DLT_LOG_ERROR, DLT_STRING("Failed mailbox read operation (status)"));
-      return -EIO;
+      ret = -EIO;
    }
 
-   return 0;
+   return ret;
 }
 
 //==============================================================================
@@ -799,7 +788,7 @@ int avx_wait_mailbox_completion(avx_device *dev)
    uint8_t cmd_1;
    int ret;
 
-   // TODO: Timeout ! en effet !! 
+   // TODO: Timeout ! en effet !!
    cmd_1 = 1;
    while (cmd_1)
    {

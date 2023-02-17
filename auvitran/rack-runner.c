@@ -5,9 +5,7 @@
  * See README
  */
 #include "esg-bsp-test.h"
-#include "rack-runner.h"
-
-DLT_DECLARE_CONTEXT(dlt_ctxt_rack);
+#include "rackAuvitran.h"
 
 static void *rack_runner(void *p_data)
 {
@@ -52,8 +50,7 @@ int rack_init(pthread_t *runner, ebt_settings_t *settings)
 	{
 		DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_rack, "RACK", "AUVITRAN Rack Context", settings->verbosity, DLT_TRACE_STATUS_DEFAULT);
 
-		/* Initialize dependencies for this, e.g. the slave-ready GPIO */
-		//ret = elite_slave_ready_gpio_init(&slave_ready_gpio, settings);
+		ret = rack_initialize();
 	}
 
 	if (EXIT_SUCCESS == ret)

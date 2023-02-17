@@ -57,7 +57,7 @@ int avx_write_burst(avx_device* dev, int page, int offset, const uint8_t *data, 
 
 int avx_read_burst(avx_device* dev, int page, int offset, uint8_t *data, size_t length);
 
-int avx_write_mailbox(avx_device* dev, int slot, int page, int offset, const uint8_t *data, size_t length);
+int32_t avx_write_mailbox(avx_device* dev, int slot, int page, int offset, const uint8_t *data, size_t length);
 
 int avx_read_mailbox(avx_device* dev, int slot, int page, int offset, uint8_t *data, size_t length);
 
