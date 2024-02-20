@@ -11,7 +11,7 @@ DLT_DECLARE_CONTEXT(dlt_ctxt_tdma);
 
 elite_gpio_t slave_ready_gpio = {0};
 
-static void *elite_tdma_runner(void *p_data)
+static void *elite_gpiod_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
 	ebt_settings_t *settings = (ebt_settings_t *)p_data;
@@ -30,7 +30,7 @@ static void *elite_tdma_runner(void *p_data)
 
 		while ((0 < nb_loops--) && (EXIT_SUCCESS == ret))
 		{
-			DLT_LOG(dlt_ctxt_tdma, DLT_LOG_DEBUG, DLT_STRING("elite_tdma_runner"), DLT_UINT32(nb_loops));
+			DLT_LOG(dlt_ctxt_tdma, DLT_LOG_DEBUG, DLT_STRING("elite_gpiod_runner"), DLT_UINT32(nb_loops));
 
 			/*wait for slave-ready GPIO to be asserted */
 			elite_slave_ready_wait(&slave_ready_gpio);
@@ -42,13 +42,13 @@ static void *elite_tdma_runner(void *p_data)
 	return (void *)ret;
 }
 
-int elite_tdma_init(pthread_t *runner, ebt_settings_t *settings)
+int elite_gpiod_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 
 	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: invalid settings"));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_gpiod_init: invalid settings"));
 		ret = -EINVAL;
 	}
 
@@ -62,10 +62,10 @@ int elite_tdma_init(pthread_t *runner, ebt_settings_t *settings)
 
 	if (EXIT_SUCCESS == ret)
 	{
-		ret = pthread_create(runner, NULL, elite_tdma_runner, (void*)settings);
+		ret = pthread_create(runner, NULL, elite_gpiod_runner, (void*)settings);
 		if (EXIT_SUCCESS != ret)
 		{
-			DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_tdma_init: failed to creating running"));
+			DLT_LOG(dlt_ctxt_tdma, DLT_LOG_ERROR, DLT_STRING("elite_gpiod_init: failed to creating running"));
 		}
 	}
 

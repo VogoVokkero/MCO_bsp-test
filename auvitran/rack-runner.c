@@ -38,7 +38,7 @@ static void *rack_runner(void *p_data)
 	return (void *)ret;
 }
 
-int rack_init(pthread_t *runner, ebt_settings_t *settings)
+int rack_runner_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 

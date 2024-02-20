@@ -14,9 +14,10 @@ this is roughly the number of 20ms audio periods to process, or 10ms SPI message
 option  "pauses"          p "Number or pauses (stop, restart) to simulate.\n"      int     optional default="0"
 option  "rack"        r "frequency for reading peak-meters"        int     optional default="0"
 option  "audio"       - "enable audio runner"        flag       off
-option  "tdma"        - "enable tdma x-fer"        flag       off
+option  "gpiod"        - "enable gpiod x-fer"        flag       off
 option  "uart"        - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
+option  "stm32"        - "enable stm32 x-fer"        flag       off
 
 option  "verbose"   v   "force VERBOSE mode"            optional
 

@@ -212,14 +212,14 @@ static void *elite_uart_dsp_runner(void *p_data)
 	return (void *)ret;
 }
 
-int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings)
+int elite_uart_dsp_runner_init(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = EXIT_SUCCESS;
 	struct termios tty;
 
 	if (NULL == settings)
 	{
-		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_init: invalid settings"));
+		DLT_LOG(dlt_ctxt_btst, DLT_LOG_ERROR, DLT_STRING("elite_uart_dsp_runner_init: invalid settings"));
 		ret = -EINVAL;
 	}
 

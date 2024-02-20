@@ -27,7 +27,6 @@ typedef enum
    FREQ_96k,
 } sampling_rate_t;
 
-
 uint32_t rack_initialize(void);
 void rack_release(void);
 

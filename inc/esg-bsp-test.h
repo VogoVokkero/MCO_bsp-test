@@ -45,10 +45,11 @@ typedef struct esg_bsp_test_settings
 } ebt_settings_t ;
 
 
-int audio_init_wait(pthread_t *runner, ebt_settings_t *settings);
-int audio_init_poll(pthread_t *runner, ebt_settings_t *settings);
-int elite_tdma_init(pthread_t *runner, ebt_settings_t *settings);
-int elite_uart_dsp_init(pthread_t *runner, ebt_settings_t *settings);
+int audio_runner_init_poll(pthread_t *runner, ebt_settings_t *settings);
+int elite_gpiod_init(pthread_t *runner, ebt_settings_t *settings);
+int elite_uart_dsp_runner_init(pthread_t *runner, ebt_settings_t *settings);
+int rack_runner_init(pthread_t *runner, ebt_settings_t *settings);
+int stm32_runner_init(pthread_t *runner, ebt_settings_t *settings);
 
 DLT_IMPORT_CONTEXT(dlt_ctxt_btst);
 

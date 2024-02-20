@@ -158,7 +158,7 @@ static void *audio_runner(void *p_data)
 	return (void *)ret;
 }
 
-int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
+int audio_runner_init_poll(pthread_t *runner, ebt_settings_t *settings)
 {
 	int ret = (NULL != settings) ? EXIT_SUCCESS : -EINVAL;
 
@@ -187,7 +187,7 @@ int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 		/* actual sample buffer */
 		memset(buf, 0, sizeof(buf));
 
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: creating runner"));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_runner_init_poll: creating runner"));
 
 		/* non-interleaved channel buffer offets */
 		for (int c = 0; c < AUDIO_TEST_CHANNELS; c++)
@@ -200,7 +200,7 @@ int audio_init_poll(pthread_t *runner, ebt_settings_t *settings)
 
 	if (0 > ret)
 	{
-		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_init_poll: failed to creating runner"), DLT_INT32(ret));
+		DLT_LOG(dlt_ctxt_audio, DLT_LOG_ERROR, DLT_STRING("audio_runner_init_poll: failed to creating runner"), DLT_INT32(ret));
 	}
 
 	return ret;

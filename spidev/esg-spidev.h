@@ -2,6 +2,8 @@
 #define ESG_SPIDEV
 #pragma once
 
+#include "linux/spi/spidev.h"
+
 #define SPI_STM_SPEED  4000000
 
 typedef struct{

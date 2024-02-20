@@ -5,6 +5,7 @@
 #define DLT_CLIENT_MAIN_MODULE
 #include "esg-bsp-test.h"
 #include "elite-slave-ready-gpio.h"
+#include "rackAuvitran.h"
 
 DLT_DECLARE_CONTEXT(dlt_ctxt_btst)
 
@@ -13,10 +14,12 @@ DLT_DECLARE_CONTEXT(dlt_ctxt_btst)
 enum
 {
 	RUNNER_AUDIO = 0,	   // alsa
-	RUNNER_ELITE_TDMA = 1, // Elite TDMA (spi)
-	RUNNER_ELITE_UDSP = 2, // Elite TDMA (spi)
+	RUNNER_ELITE_GPIOD = 1, 
+	RUNNER_ELITE_UDSP = 2, 
 	RUNNER_RACK = 3,	   // auvitran rack
-	RUNNER_INVALID = 4
+	RUNNER_STM32 = 4,
+	//
+	RUNNER_INVALID = 5
 };
 
 pthread_t test_runner[RUNNER_INVALID] = {0};
@@ -71,7 +74,7 @@ int main(int argc, char **argv)
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("rack read freq: "), DLT_INT32(g_settings.rack_freq));
 	}
 
-	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(args_info.tdma_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(args_info.gpiod_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(args_info.uart_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("gpio poll test only:"), DLT_INT32(args_info.gpio_test_only_flag));
 
@@ -91,23 +94,29 @@ int main(int argc, char **argv)
 	/* check if auvitran interface test is wanted, set the default gains and audio matrix */
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.rack_given))
 	{
-		ret = rack_init(&test_runner[RUNNER_RACK], (void *)&g_settings);
+		ret = rack_runner_init(&test_runner[RUNNER_RACK], (void *)&g_settings);
 	}
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.audio_flag))
 	{
-		ret = audio_init_poll(&test_runner[RUNNER_AUDIO], (void *)&g_settings);
+		ret = audio_runner_init_poll(&test_runner[RUNNER_AUDIO], (void *)&g_settings);
 	}
 
-	if ((EXIT_SUCCESS == ret) && (0 != args_info.tdma_flag))
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.gpiod_flag))
 	{
-		ret = elite_tdma_init(&test_runner[RUNNER_ELITE_TDMA], (void *)&g_settings);
+		ret = elite_gpiod_init(&test_runner[RUNNER_ELITE_GPIOD], (void *)&g_settings);
 	}
 
 	if ((EXIT_SUCCESS == ret) && (0 != args_info.uart_flag))
 	{
-		ret = elite_uart_dsp_init(&test_runner[RUNNER_ELITE_UDSP], (void *)&g_settings);
+		ret = elite_uart_dsp_runner_init(&test_runner[RUNNER_ELITE_UDSP], (void *)&g_settings);
 	}
+
+	if ((EXIT_SUCCESS == ret) && (0 != args_info.stm32_flag))
+	{
+		ret = stm32_runner_init(&test_runner[RUNNER_STM32], (void *)&g_settings);
+	}
+
 
 	/* Wait for any valid runner to complete */
 	if (0 != test_runner[RUNNER_AUDIO])
@@ -115,15 +124,21 @@ int main(int argc, char **argv)
 		pthread_join(test_runner[RUNNER_AUDIO], NULL);
 	}
 
-	if (0 != test_runner[RUNNER_ELITE_TDMA])
+	if (0 != test_runner[RUNNER_ELITE_GPIOD])
 	{
-		pthread_join(test_runner[RUNNER_ELITE_TDMA], NULL);
+		pthread_join(test_runner[RUNNER_ELITE_GPIOD], NULL);
 	}
 
 	if (0 != test_runner[RUNNER_RACK])
 	{
 		pthread_join(test_runner[RUNNER_RACK], NULL);
 	}
+
+	if (0 != test_runner[RUNNER_STM32])
+	{
+		pthread_join(test_runner[RUNNER_STM32], NULL);
+	}
+
 
 	/* we don't join the uard runner, we just kill it when comm
 	 * is no longuer needed

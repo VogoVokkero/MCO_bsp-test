@@ -40,9 +40,10 @@ const char *gengetopt_args_info_help[] = {
   "  -p, --pauses=INT      Number or pauses (stop, restart) to simulate.\n                            (default=`0')",
   "  -r, --rack=INT        frequency for reading peak-meters  (default=`0')",
   "      --audio           enable audio runner  (default=off)",
-  "      --tdma            enable tdma x-fer  (default=off)",
+  "      --gpiod           enable gpiod x-fer  (default=off)",
   "      --uart            enable uart x-fer  (default=off)",
   "      --gpio-test-only  just check select() on gpio47  (default=off)",
+  "      --stm32           enable stm32 x-fer  (default=off)",
   "  -v, --verbose         force VERBOSE mode",
   "\nExample1 :run audio-loopback and uart-parsing : #>esg-bsp-test --audio --uart\n-l 10000000 --verbose\n\nExample2 :run audio-loopback and stress pause/resume : #>esg-bsp-test --audio\n-p -l 10000000\nGood luck.",
     0
@@ -99,9 +100,10 @@ void clear_given (struct gengetopt_args_info *args_info)
   args_info->pauses_given = 0 ;
   args_info->rack_given = 0 ;
   args_info->audio_given = 0 ;
-  args_info->tdma_given = 0 ;
+  args_info->gpiod_given = 0 ;
   args_info->uart_given = 0 ;
   args_info->gpio_test_only_given = 0 ;
+  args_info->stm32_given = 0 ;
   args_info->verbose_given = 0 ;
 }
 
@@ -116,9 +118,10 @@ void clear_args (struct gengetopt_args_info *args_info)
   args_info->rack_arg = 0;
   args_info->rack_orig = NULL;
   args_info->audio_flag = 0;
-  args_info->tdma_flag = 0;
+  args_info->gpiod_flag = 0;
   args_info->uart_flag = 0;
   args_info->gpio_test_only_flag = 0;
+  args_info->stm32_flag = 0;
   
 }
 
@@ -133,10 +136,11 @@ void init_args_info(struct gengetopt_args_info *args_info)
   args_info->pauses_help = gengetopt_args_info_help[3] ;
   args_info->rack_help = gengetopt_args_info_help[4] ;
   args_info->audio_help = gengetopt_args_info_help[5] ;
-  args_info->tdma_help = gengetopt_args_info_help[6] ;
+  args_info->gpiod_help = gengetopt_args_info_help[6] ;
   args_info->uart_help = gengetopt_args_info_help[7] ;
   args_info->gpio_test_only_help = gengetopt_args_info_help[8] ;
-  args_info->verbose_help = gengetopt_args_info_help[9] ;
+  args_info->stm32_help = gengetopt_args_info_help[9] ;
+  args_info->verbose_help = gengetopt_args_info_help[10] ;
   
 }
 
@@ -271,12 +275,14 @@ cmdline_parser_dump(FILE *outfile, struct gengetopt_args_info *args_info)
     write_into_file(outfile, "rack", args_info->rack_orig, 0);
   if (args_info->audio_given)
     write_into_file(outfile, "audio", 0, 0 );
-  if (args_info->tdma_given)
-    write_into_file(outfile, "tdma", 0, 0 );
+  if (args_info->gpiod_given)
+    write_into_file(outfile, "gpiod", 0, 0 );
   if (args_info->uart_given)
     write_into_file(outfile, "uart", 0, 0 );
   if (args_info->gpio_test_only_given)
     write_into_file(outfile, "gpio-test-only", 0, 0 );
+  if (args_info->stm32_given)
+    write_into_file(outfile, "stm32", 0, 0 );
   if (args_info->verbose_given)
     write_into_file(outfile, "verbose", 0, 0 );
   
@@ -536,9 +542,10 @@ cmdline_parser_internal (
         { "pauses",	1, NULL, 'p' },
         { "rack",	1, NULL, 'r' },
         { "audio",	0, NULL, 0 },
-        { "tdma",	0, NULL, 0 },
+        { "gpiod",	0, NULL, 0 },
         { "uart",	0, NULL, 0 },
         { "gpio-test-only",	0, NULL, 0 },
+        { "stm32",	0, NULL, 0 },
         { "verbose",	0, NULL, 'v' },
         { 0,  0, 0, 0 }
       };
@@ -623,14 +630,14 @@ cmdline_parser_internal (
               goto failure;
           
           }
-          /* enable tdma x-fer.  */
-          else if (strcmp (long_options[option_index].name, "tdma") == 0)
+          /* enable gpiod x-fer.  */
+          else if (strcmp (long_options[option_index].name, "gpiod") == 0)
           {
           
           
-            if (update_arg((void *)&(args_info->tdma_flag), 0, &(args_info->tdma_given),
-                &(local_args_info.tdma_given), optarg, 0, 0, ARG_FLAG,
-                check_ambiguity, override, 1, 0, "tdma", '-',
+            if (update_arg((void *)&(args_info->gpiod_flag), 0, &(args_info->gpiod_given),
+                &(local_args_info.gpiod_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "gpiod", '-',
                 additional_error))
               goto failure;
           
@@ -655,6 +662,18 @@ cmdline_parser_internal (
             if (update_arg((void *)&(args_info->gpio_test_only_flag), 0, &(args_info->gpio_test_only_given),
                 &(local_args_info.gpio_test_only_given), optarg, 0, 0, ARG_FLAG,
                 check_ambiguity, override, 1, 0, "gpio-test-only", '-',
+                additional_error))
+              goto failure;
+          
+          }
+          /* enable stm32 x-fer.  */
+          else if (strcmp (long_options[option_index].name, "stm32") == 0)
+          {
+          
+          
+            if (update_arg((void *)&(args_info->stm32_flag), 0, &(args_info->stm32_given),
+                &(local_args_info.stm32_given), optarg, 0, 0, ARG_FLAG,
+                check_ambiguity, override, 1, 0, "stm32", '-',
                 additional_error))
               goto failure;
           
