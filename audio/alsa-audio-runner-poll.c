@@ -44,8 +44,11 @@ static void *audio_runner(void *p_data)
 	if (EXIT_SUCCESS == ret)
 	{
 		uint32_t nb_loops = settings->nb_loops;
-
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
 		alsa_device_startn(audio_dev, ch_bufs);
+#else
+		alsa_device_starti(audio_dev, buf);
+#endif
 
 #define SELECT_nPOLL
 #ifdef SELECT_nPOLL
@@ -91,15 +94,25 @@ static void *audio_runner(void *p_data)
 				/* Audio available from the soundcard (capture) */
 				if (FD_ISSET(pfds[CAPTURE_FD_INDEX].fd, &read_fds))
 				{
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
 					/* Get audio from the soundcard */
 					ret = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#else
+					/* Get audio from the soundcard */
+					ret = alsa_device_readi(audio_dev, buf, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#endif
 				}
 
 				/* Ready to play a frame (playback) */
 				if (FD_ISSET(pfds[PLAYBACK_FD_INDEX].fd, &write_fds))
 				{
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
 					/* Playback the audio and reset the echo canceller if we got an underrun */
 					ret = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#else
+					/* Playback the audio and reset the echo canceller if we got an underrun */
+					ret = alsa_device_writei(audio_dev, buf, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#endif
 				}
 			}
 #else
@@ -117,16 +130,25 @@ static void *audio_runner(void *p_data)
 				ret = alsa_device_capture_ready(audio_dev, pfds, nfds);
 				if (0 < ret)
 				{
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
 					/* Get audio from the soundcard */
 					ret = alsa_device_readn(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#else
+					/* Get audio from the soundcard */
+					ret = alsa_device_readi(audio_dev, buf, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#endif
 				}
 
 				/* Ready to play a frame (playback) */
 				ret = alsa_device_playback_ready(audio_dev, pfds, nfds);
 				if (0 < ret)
 				{
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
 					/* Playback the audio and reset the echo canceller if we got an underrun */
 					ret = alsa_device_writen(audio_dev, ch_bufs, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#else
+					ret = alsa_device_writei(audio_dev, buf, AUDIO_TEST_PERIOD_SZ_FRAMES);
+#endif
 				}
 			}
 #endif
@@ -134,13 +156,20 @@ static void *audio_runner(void *p_data)
 			/* Stress (full) pause/resume cycle */
 			if ((0U < settings->pauses) && (4U == (nb_loops & 0xFF)))
 			{
-				 int paused = alsa_device_pause(audio_dev, 1 /*pause*/, ch_bufs);
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
+				 int paused = alsa_device_pausen(audio_dev, 1 /*pause*/, ch_bufs);
+#else
+				int paused = alsa_device_pausei(audio_dev, 1 /*pause*/, buf);
+#endif
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("pausing"));
 
 				(void)alsa_device_state(audio_dev, 0 /*play*/ );
 				(void)alsa_device_state(audio_dev, 1 /*rec*/ );
-
-				alsa_device_pause(audio_dev, 0, ch_bufs);
+#if defined(AUDIO_TEST_SAMPLE_ACCESS) && AUDIO_TEST_SAMPLE_ACCESS == SND_PCM_ACCESS_RW_NONINTERLEAVED
+				alsa_device_pausen(audio_dev, 0, ch_bufs);
+#else
+				alsa_device_pausei(audio_dev, 0, buf);
+#endif
 				DLT_LOG(dlt_ctxt_audio, DLT_LOG_INFO, DLT_STRING("resuming"));
 
 				(void)alsa_device_state(audio_dev, 0);

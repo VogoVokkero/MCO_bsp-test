@@ -60,9 +60,13 @@ extern "C"
 
    void alsa_device_close(AlsaDevice_t *dev);
 
-   int alsa_device_pause(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_buf);
+   int alsa_device_pausen(AlsaDevice_t *dev, const uint8_t pause_nResume, void **ch_buf);
 
-   void alsa_device_recover(AlsaDevice_t *dev, void **ch_buf, int err);
+   int alsa_device_pausei(AlsaDevice_t *dev, const uint8_t pause_nResume, void *buff);
+
+   void alsa_device_recovern(AlsaDevice_t *dev, void **ch_buf, int err);
+
+   void alsa_device_recoveri(AlsaDevice_t *dev, void *buff, int err);
 
    snd_pcm_state_t alsa_device_state(AlsaDevice_t *dev, uint8_t rec_nPlay);
 
@@ -79,6 +83,8 @@ extern "C"
    int alsa_device_playback_ready(AlsaDevice_t *dev, struct pollfd *pfds, unsigned int nfds);
 
    void alsa_device_startn(AlsaDevice_t *dev, void **ch_buf);
+
+   void alsa_device_starti(AlsaDevice_t *dev, void *buff);
 
    int alsa_device_nfds(AlsaDevice_t *dev);
 
