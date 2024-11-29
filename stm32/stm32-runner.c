@@ -29,6 +29,8 @@ static protdspSpiFrame_t SpiRxFrame = {0};
 
 static spi_dev_t spi_dev = {0};
 
+#define POLL_VERSION
+#ifdef POLL_VERSION
 static void *stm32_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
@@ -57,25 +59,25 @@ static void *stm32_runner(void *p_data)
 			FD_ZERO(&write_fds);
 			FD_ZERO(&except_fds);
 			// Avec le descripteur de fichier de la file de messages
-			FD_SET(spi_dev.fd, &except_fds);
+		//	FD_SET(spi_dev.fd, &except_fds);
 			FD_SET(spi_dev.fd, &read_fds);
-			FD_SET(spi_dev.fd, &write_fds);
+		//	FD_SET(spi_dev.fd, &write_fds);
 
 			max_fd = spi_dev.fd + 1;
 
 			timeout.tv_sec = 0;
 			timeout.tv_usec = 100;
 
-			int ret_select = select(max_fd + 1, &read_fds, &write_fds, &except_fds, &timeout);
+			int ret_select = select(max_fd, &read_fds, NULL, NULL, &timeout);
 			if (ret_select == -1)
 			{
 				fprintf(stderr, "stm32_runner: timeout!\n");
 				fflush(stderr);
 				DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("timeout"), DLT_UINT(nb_loops));
 			}
-			else if (ret_select)
+			else 
 			{
-				if (FD_ISSET(spi_dev.fd, &read_fds))
+				//if (FD_ISSET(spi_dev.fd, &read_fds))
 				{
 					DLT_LOG(dlt_ctxt_stm32, DLT_LOG_INFO, DLT_STRING("spi_transfer"), DLT_UINT(nb_loops));
 
@@ -95,6 +97,47 @@ static void *stm32_runner(void *p_data)
 
 	return (void *)ret;
 }
+#else
+static void *stm32_runner(void *p_data)
+{
+	int ret = EXIT_SUCCESS;
+	struct timeval t_in, timeout = {0};
+	ebt_settings_t *settings = (ebt_settings_t *)p_data;
+	fd_set read_fds, write_fds, except_fds;
+	int max_fd;
+
+	if (NULL == settings)
+	{
+		DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("START failed, ebt_settings_t null"));
+		ret = -EINVAL;
+	}
+
+	if (EXIT_SUCCESS == ret)
+	{
+		uint32_t nb_loops = settings->nb_loops;
+		ssize_t byte_rx = 0;
+
+		DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("START"), DLT_UINT32(nb_loops));
+
+		while ((nb_loops--) && (0 <= byte_rx))
+		{
+			DLT_LOG(dlt_ctxt_stm32, DLT_LOG_INFO, DLT_STRING("spi_transfer"), DLT_UINT(nb_loops));
+
+			// SPI_IOC_MESSAGE with embedded slaveready wait.
+			byte_rx = spi_transfer(&spi_dev,
+								   (const uint8_t *)&SpiTxFrame,
+								   (const uint8_t *)&SpiRxFrame,
+								   sizeof(protdspSpiFrame_t));
+		}
+	};
+
+	DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("EXIT"), DLT_UINT32(ret));
+
+	spi_close(&spi_dev);
+
+	return (void *)ret;
+}
+#endif // POLL_VERSION
 
 int stm32_runner_init(pthread_t *runner, ebt_settings_t *settings)
 {
@@ -110,7 +153,7 @@ int stm32_runner_init(pthread_t *runner, ebt_settings_t *settings)
 	{
 		DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_stm32, "ELIT", "ESG BSP STM32 Context", settings->verbosity, DLT_TRACE_STATUS_DEFAULT);
 
-		ret = spi_init(&spi_dev, STM_SPIDEV, SPI_STM_SPEED, SPI_MODE_3);
+		ret = spi_init(&spi_dev, STM_SPIDEV, SPI_STM_SPEED, SPI_NO_CS | SPI_MODE_0);
 		if (0 > ret)
 		{
 			DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("Failed to initialize SPI device"), DLT_STRING(STM_SPIDEV));
