@@ -1,12 +1,3 @@
-/*
- ============================================================================
- Name        : gpio.c
- Author      : tmu
- Version     :
- Copyright   : Closed
- Description : gpio use tools
- ============================================================================
- */
 #include <fcntl.h>
 #include <sys/select.h>
 #include <unistd.h>   //4 close/open

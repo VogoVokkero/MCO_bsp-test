@@ -9,32 +9,17 @@ version "1.0"   # don't use version if you're using automake
 #text "\nA brief text description"
 #text " before the other options.\n"
 
-option  "loops"          l "Number or cycles for each running.\
-this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n"      int     optional default="1000"
-option  "pauses"          p "Number or pauses (stop, restart) to simulate.\n"      int     optional default="0"
-option  "rack"        r "frequency for reading peak-meters"        int     optional default="0"
-option  "audio"       - "enable audio runner"        flag       off
-option  "gpiod"        - "enable gpiod x-fer"        flag       off
-option  "uart"        - "enable uart x-fer"        flag       off
+option  "loops" l "Number or cycles for each running. this is roughly the number of 20ms audio periods to process, or 10ms SPI messages\n"      int     optional default="1000"
+option  "pauses" p "Number or pauses (stop, restart) to simulate.\n"      int     optional default="0"
+option  "rack" r "frequency for reading peak-meters"        int     optional default="0"
+option  "audio" - "enable audio runner"        flag       off
+option  "gpiod" - "enable gpiod x-fer"        flag       off
+option  "uart"  - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
-option  "stm32"        - "enable stm32 x-fer"        flag       off
+option  "stm32" - "enable stm32 x-fer on spidev 3.0 (tdma spidev sim)"        flag       off
 
 option  "verbose"   v   "force VERBOSE mode"            optional
 
-#Well, this further explanation is quite useless, but it's only to \
-#show an example of an option with details, \
-#which will be printed only when --detailed-help is given \
-#at the command line."
-#section "last option section"
-#option  "long-opt"        - "A long option"        long       optional
-#option  "def-opt"         - "A string option with default" 
-#        string default="Hello" optional
-#option  "enum-opt"         - "A string option with list of values" 
-#        values="foo","bar","hello","bye" default="hello" optional
-#option  "secret"         S "hidden option will not appear in --help" 
-#        int optional hidden
-#option  "dependant"         D 
-#        "option that depends on str-opt" int optional dependon="str-opt"
 text "\nExample1 :run audio-loopback and uart-parsing : #>esg-bsp-test --audio --uart -l 10000000 --verbose\n"
 text "\nExample2 :run audio-loopback and stress pause/resume : #>esg-bsp-test --audio -p -l 10000000\n"
 text "Good luck."

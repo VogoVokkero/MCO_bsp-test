@@ -74,7 +74,7 @@ int main(int argc, char **argv)
 		DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("rack read freq: "), DLT_INT32(g_settings.rack_freq));
 	}
 
-	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("tdma  enabled:"), DLT_INT32(args_info.gpiod_flag));
+	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("stm32 enabled:"), DLT_INT32(args_info.stm32_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("uart  enabled:"), DLT_INT32(args_info.uart_flag));
 	DLT_LOG(dlt_ctxt_btst, DLT_LOG_INFO, DLT_STRING("gpio poll test only:"), DLT_INT32(args_info.gpio_test_only_flag));
 
