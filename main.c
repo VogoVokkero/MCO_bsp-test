@@ -29,7 +29,8 @@ ebt_settings_t g_settings =
 		.nb_loops = 1000U,
 		.verbosity = DLT_LOG_INFO,
 		.pauses = 0U,
-		.rack_freq = 0U
+		.rack_freq = 0U,
+		.sched_rt = 0U
 	};
 
 int main(int argc, char **argv)
@@ -58,6 +59,7 @@ int main(int argc, char **argv)
 	g_settings.nb_loops = args_info.loops_arg;
 	g_settings.pauses = args_info.pauses_arg;
 	g_settings.rack_freq = args_info.rack_arg;
+	g_settings.sched_rt = args_info.sched_rt_arg;
 
 	DLT_REGISTER_CONTEXT_LL_TS(dlt_ctxt_btst, "BTST", "BSP Test suite", g_settings.verbosity, DLT_TRACE_STATUS_DEFAULT);
 

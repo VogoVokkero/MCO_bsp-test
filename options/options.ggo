@@ -17,6 +17,7 @@ option  "gpiod" - "enable gpiod x-fer"        flag       off
 option  "uart"  - "enable uart x-fer"        flag       off
 option  "gpio-test-only" - "just check select() on gpio47"        flag       off
 option  "stm32" - "enable stm32 x-fer on spidev 3.0 (tdma spidev sim)"        flag       off
+option "sched-rt" s "make runner about realtime with a SCHED_FIFO prio (1 to 99)" int optional default="50"
 
 option  "verbose"   v   "force VERBOSE mode"            optional
 

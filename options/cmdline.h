@@ -39,11 +39,11 @@ struct gengetopt_args_info
 {
   const char *help_help; /**< @brief Print help and exit help description.  */
   const char *version_help; /**< @brief Print version and exit help description.  */
-  int loops_arg;	/**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
+  int loops_arg;	/**< @brief Number or cycles for each running. this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  (default='1000').  */
-  char * loops_orig;	/**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
+  char * loops_orig;	/**< @brief Number or cycles for each running. this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  original value given at command line.  */
-  const char *loops_help; /**< @brief Number or cycles for each running.this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
+  const char *loops_help; /**< @brief Number or cycles for each running. this is roughly the number of 20ms audio periods to process, or 10ms SPI messages
  help description.  */
   int pauses_arg;	/**< @brief Number or pauses (stop, restart) to simulate.
  (default='0').  */
@@ -62,8 +62,11 @@ struct gengetopt_args_info
   const char *uart_help; /**< @brief enable uart x-fer help description.  */
   int gpio_test_only_flag;	/**< @brief just check select() on gpio47 (default=off).  */
   const char *gpio_test_only_help; /**< @brief just check select() on gpio47 help description.  */
-  int stm32_flag;	/**< @brief enable stm32 x-fer (default=off).  */
-  const char *stm32_help; /**< @brief enable stm32 x-fer help description.  */
+  int stm32_flag;	/**< @brief enable stm32 x-fer on spidev 3.0 (tdma spidev sim) (default=off).  */
+  const char *stm32_help; /**< @brief enable stm32 x-fer on spidev 3.0 (tdma spidev sim) help description.  */
+  int sched_rt_arg;	/**< @brief make runner about realtime with a SCHED_FIFO prio (1 to 99) (default='50').  */
+  char * sched_rt_orig;	/**< @brief make runner about realtime with a SCHED_FIFO prio (1 to 99) original value given at command line.  */
+  const char *sched_rt_help; /**< @brief make runner about realtime with a SCHED_FIFO prio (1 to 99) help description.  */
   const char *verbose_help; /**< @brief force VERBOSE mode help description.  */
   
   unsigned int help_given ;	/**< @brief Whether help was given.  */
@@ -76,6 +79,7 @@ struct gengetopt_args_info
   unsigned int uart_given ;	/**< @brief Whether uart was given.  */
   unsigned int gpio_test_only_given ;	/**< @brief Whether gpio-test-only was given.  */
   unsigned int stm32_given ;	/**< @brief Whether stm32 was given.  */
+  unsigned int sched_rt_given ;	/**< @brief Whether sched-rt was given.  */
   unsigned int verbose_given ;	/**< @brief Whether verbose was given.  */
 
 } ;
@@ -190,44 +194,6 @@ void cmdline_parser_init (struct gengetopt_args_info *args_info);
  * @param args_info the structure to deallocate
  */
 void cmdline_parser_free (struct gengetopt_args_info *args_info);
-
-/**
- * The string parser (interprets the passed string as a command line)
- * @param cmdline the command line stirng
- * @param args_info the structure where option information will be stored
- * @param prog_name the name of the program that will be used to print
- *   possible errors
- * @return 0 if everything went fine, NON 0 if an error took place
- */
-int cmdline_parser_string (const char *cmdline, struct gengetopt_args_info *args_info,
-  const char *prog_name);
-/**
- * The string parser (version with additional parameters - deprecated)
- * @param cmdline the command line stirng
- * @param args_info the structure where option information will be stored
- * @param prog_name the name of the program that will be used to print
- *   possible errors
- * @param override whether to override possibly already present options
- * @param initialize whether to initialize the option structure my_args_info
- * @param check_required whether to check that all required options were provided
- * @return 0 if everything went fine, NON 0 if an error took place
- * @deprecated use cmdline_parser_string_ext() instead
- */
-int cmdline_parser_string2 (const char *cmdline, struct gengetopt_args_info *args_info,
-  const char *prog_name,
-  int override, int initialize, int check_required);
-/**
- * The string parser (version with additional parameters)
- * @param cmdline the command line stirng
- * @param args_info the structure where option information will be stored
- * @param prog_name the name of the program that will be used to print
- *   possible errors
- * @param params additional parameters for the parser
- * @return 0 if everything went fine, NON 0 if an error took place
- */
-int cmdline_parser_string_ext (const char *cmdline, struct gengetopt_args_info *args_info,
-  const char *prog_name,
-  struct cmdline_parser_params *params);
 
 /**
  * Checks that all the required options were specified

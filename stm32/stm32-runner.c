@@ -5,6 +5,9 @@
 #include <strings.h>
 #include <string.h>
 
+#include <sys/time.h>
+#include <time.h>
+
 #include "dlt-client.h"
 #include "esg-spidev.h"
 #include "esg-bsp-test.h"
@@ -31,6 +34,9 @@ static spi_dev_t spi_dev = {0};
 
 #define POLL_VERSION
 #ifdef POLL_VERSION
+
+// this is meant to ba a real-time thread
+
 static void *stm32_runner(void *p_data)
 {
 	int ret = EXIT_SUCCESS;
@@ -59,9 +65,9 @@ static void *stm32_runner(void *p_data)
 			FD_ZERO(&write_fds);
 			FD_ZERO(&except_fds);
 			// Avec le descripteur de fichier de la file de messages
-		//	FD_SET(spi_dev.fd, &except_fds);
+			//	FD_SET(spi_dev.fd, &except_fds);
 			FD_SET(spi_dev.fd, &read_fds);
-		//	FD_SET(spi_dev.fd, &write_fds);
+			//	FD_SET(spi_dev.fd, &write_fds);
 
 			max_fd = spi_dev.fd + 1;
 
@@ -75,9 +81,9 @@ static void *stm32_runner(void *p_data)
 				fflush(stderr);
 				DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("timeout"), DLT_UINT(nb_loops));
 			}
-			else 
+			else
 			{
-				//if (FD_ISSET(spi_dev.fd, &read_fds))
+				// if (FD_ISSET(spi_dev.fd, &read_fds))
 				{
 					DLT_LOG(dlt_ctxt_stm32, DLT_LOG_INFO, DLT_STRING("spi_transfer"), DLT_UINT(nb_loops));
 
@@ -88,6 +94,10 @@ static void *stm32_runner(void *p_data)
 										   sizeof(protdspSpiFrame_t));
 				}
 			}
+
+			// do some syscalls, to fake load
+			struct timespec res;
+			clock_gettime(CLOCK_MONOTONIC, &res);
 		};
 	}
 
@@ -162,11 +172,29 @@ int stm32_runner_init(pthread_t *runner, ebt_settings_t *settings)
 
 	if (EXIT_SUCCESS == ret)
 	{
-		ret = pthread_create(runner, NULL, stm32_runner, (void *)settings);
+		pthread_attr_t attr;
+		struct sched_param param;
+
+		// Initialize thread attributes
+		pthread_attr_init(&attr);
+
+		// Set real-time scheduling policy
+		pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
+
+		// Set thread priority
+		param.sched_priority = settings->sched_rt; // Choose a priority between 1 and 99
+		pthread_attr_setschedparam(&attr, &param);
+
+		// Set thread to explicitly use the defined scheduling policy
+		pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+
+		ret = pthread_create(runner, &attr, stm32_runner, (void *)settings);
 		if (EXIT_SUCCESS != ret)
 		{
 			DLT_LOG(dlt_ctxt_stm32, DLT_LOG_ERROR, DLT_STRING("stm32_runner_init: failed to creating running"));
 		}
+
+		pthread_attr_destroy(&attr);
 	}
 
 	return ret;

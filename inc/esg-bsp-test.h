@@ -42,6 +42,7 @@ typedef struct esg_bsp_test_settings
     uint32_t verbosity;
     uint32_t pauses;
     uint32_t rack_freq;
+    uint8_t sched_rt;
 } ebt_settings_t ;
 
 
